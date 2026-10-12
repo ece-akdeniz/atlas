@@ -1,0 +1,462 @@
+{
+  "as_of": "2026-10-12T21:43:14+00:00",
+  "records": 88,
+  "sources_registered": 35,
+  "sources_operational_now": 10,
+  "coverage": {
+    "Stuttgart": {
+      "stored_by_category": {
+        "research": 13,
+        "jobs": 1,
+        "events": 1
+      },
+      "checked_current_by_category": {
+        "research": 7,
+        "events": 1
+      }
+    },
+    "Munich": {
+      "stored_by_category": {
+        "jobs": 2,
+        "research": 8,
+        "events": 17
+      },
+      "checked_current_by_category": {
+        "research": 4
+      }
+    },
+    "Zurich": {
+      "stored_by_category": {
+        "research": 42,
+        "jobs": 3,
+        "events": 1
+      },
+      "checked_current_by_category": {
+        "research": 39,
+        "jobs": 3
+      }
+    }
+  },
+  "sources": [
+    {
+      "id": "a4c63ea3bfa3",
+      "name": "cvg.cit.tum.de",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "airbus",
+      "name": "Airbus \u00b7 careers",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "anybotics",
+      "name": "ANYbotics \u00b7 public Lever postings",
+      "adapter": "lever",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 3,
+      "last_success": "2026-10-12T21:23:01+00:00",
+      "last_attempt": "2026-10-12T21:23:01+00:00",
+      "error": null,
+      "collection_report": "3 relevant Zurich roles from 22 published employer postings; pagination checked; full-time roles marked future options"
+    },
+    {
+      "id": "bmw",
+      "name": "BMW Group \u00b7 student roles",
+      "adapter": "jsonld",
+      "enabled": true,
+      "operational": false,
+      "last_record_count": 0,
+      "last_success": null,
+      "last_attempt": "2026-10-12T21:37:44+00:00",
+      "error": "Cannot verify robots policy: HTTPSConnectionPool(host='95.100.110.16', port=443): Read timed out. (read timeout=15)",
+      "collection_report": null
+    },
+    {
+      "id": "bosch",
+      "name": "Bosch \u00b7 computer vision",
+      "adapter": "reviewed",
+      "enabled": true,
+      "operational": false,
+      "last_record_count": 0,
+      "last_success": null,
+      "last_attempt": "2026-10-12T21:38:02+00:00",
+      "error": "HTTP 410; last known records preserved",
+      "collection_report": null
+    },
+    {
+      "id": "cyber-niclas",
+      "name": "Cyber Valley \u00b7 nICLAS Forum 2026",
+      "adapter": "cyber",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 1,
+      "last_success": "2026-10-12T21:23:04+00:00",
+      "last_attempt": "2026-10-12T21:23:04+00:00",
+      "error": null,
+      "collection_report": "1 official event; registration status and financial support require confirmation"
+    },
+    {
+      "id": "cyber-valley",
+      "name": "Cyber Valley \u00b7 ecosystem announcements",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "daad",
+      "name": "DAAD \u00b7 scholarships & mobility",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "dlr",
+      "name": "DLR \u00b7 student research",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "dlr-rm",
+      "name": "DLR \u00b7 Robotics & Mechatronics students",
+      "adapter": "dlr",
+      "enabled": true,
+      "operational": false,
+      "last_record_count": 0,
+      "last_success": "2026-10-12T21:09:07+00:00",
+      "last_attempt": "2026-10-12T21:23:45+00:00",
+      "error": "Cannot verify robots policy: HTTPSConnectionPool(host='194.94.201.30', port=443): Read timed out. (read timeout=8)",
+      "collection_report": null
+    },
+    {
+      "id": "energy-now",
+      "name": "ETH \u00b7 Energy Now!",
+      "adapter": "reviewed",
+      "enabled": true,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": "2026-10-12T19:37:34+00:00",
+      "last_attempt": "2026-10-12T19:37:34+00:00",
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "eth-mobility",
+      "name": "ETH \u00b7 project mobility",
+      "adapter": "reviewed",
+      "enabled": true,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": "2026-10-12T19:37:38+00:00",
+      "last_attempt": "2026-10-12T19:37:38+00:00",
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "eth-movement",
+      "name": "ETH \u00b7 Movement Biomechanics public feed",
+      "adapter": "eth-projects",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 1,
+      "last_success": "2026-10-12T21:24:18+00:00",
+      "last_attempt": "2026-10-12T21:24:18+00:00",
+      "error": null,
+      "collection_report": "1 relevant projects from 1 official public lab feeds; 0 restricted descriptions; full SIROP search not collected"
+    },
+    {
+      "id": "fraunhofer",
+      "name": "Fraunhofer \u00b7 jobs & theses",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "hackathonhub",
+      "name": "Hackathon Hub \u00b7 secondary discovery",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "hackatum",
+      "name": "hackaTUM \u00b7 official FAQ",
+      "adapter": "hackatum",
+      "enabled": true,
+      "operational": false,
+      "last_record_count": 0,
+      "last_success": "2026-10-12T21:09:15+00:00",
+      "last_attempt": "2026-10-12T21:24:43+00:00",
+      "error": "HTTPSConnectionPool(host='131.159.30.5', port=443): Read timed out. (read timeout=8)",
+      "collection_report": null
+    },
+    {
+      "id": "hackzurich",
+      "name": "HackZurich \u00b7 organizer",
+      "adapter": "reviewed",
+      "enabled": true,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": "2026-10-12T19:36:46+00:00",
+      "last_attempt": "2026-10-12T19:36:46+00:00",
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "ipa-students",
+      "name": "Fraunhofer IPA \u00b7 Stuttgart student research",
+      "adapter": "fraunhofer",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 5,
+      "last_success": "2026-10-12T21:26:45+00:00",
+      "last_attempt": "2026-10-12T21:26:45+00:00",
+      "error": null,
+      "collection_report": "5 relevant IPA student research roles from 6 details / 1 index pages; up to 8 pages and 50 details"
+    },
+    {
+      "id": "mercedes",
+      "name": "Mercedes-Benz \u00b7 careers",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "mpi-is",
+      "name": "Max Planck \u00b7 Intelligent Systems",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "porsche",
+      "name": "Porsche \u00b7 careers",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "robotum",
+      "name": "roboTUM \u00b7 organizer events",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": false,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "rpg",
+      "name": "UZH \u00b7 Robotics and Perception Group",
+      "adapter": "rpg",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 24,
+      "last_success": "2026-10-12T21:26:47+00:00",
+      "last_attempt": "2026-10-12T21:26:47+00:00",
+      "error": null,
+      "collection_report": "Extracted 24 records"
+    },
+    {
+      "id": "rsl",
+      "name": "ETH \u00b7 Robotic Systems Lab public SIROP feed",
+      "adapter": "eth-projects",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 16,
+      "last_success": "2026-10-12T21:26:50+00:00",
+      "last_attempt": "2026-10-12T21:26:50+00:00",
+      "error": null,
+      "collection_report": "16 relevant projects from 1 official public lab feeds; 2 restricted descriptions; full SIROP search not collected"
+    },
+    {
+      "id": "sirop",
+      "name": "SIROP \u00b7 protected general search",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": false,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "start-hack",
+      "name": "START Hack \u00b7 organizer",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "stuttgart-events",
+      "name": "Stuttgart \u00b7 university events",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "stuttgart-iff",
+      "name": "Stuttgart IFF \u00b7 projects & institute PDFs",
+      "adapter": "iff",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 8,
+      "last_success": "2026-10-12T21:27:08+00:00",
+      "last_attempt": "2026-10-12T21:27:08+00:00",
+      "error": null,
+      "collection_report": "8 relevant topics from 15 panels; 7 PDFs extracted; 0 PDF failures; maximum 2 PDFs/topic and 12 pages/PDF"
+    },
+    {
+      "id": "stuttgart-ilr",
+      "name": "Stuttgart \u00b7 ILR university\u2013industry routes",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "stuttgart-ipr",
+      "name": "Stuttgart \u00b7 IPR robotics",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "tum",
+      "name": "TUM \u00b7 robotics & AI",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    },
+    {
+      "id": "tum-cvg",
+      "name": "TUM \u00b7 Computer Vision & AI projects",
+      "adapter": "tum-cvg",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 4,
+      "last_success": "2026-10-12T21:27:20+00:00",
+      "last_attempt": "2026-10-12T21:27:20+00:00",
+      "error": null,
+      "collection_report": "4 project rows; all table rows inspected; thesis suitability preserved"
+    },
+    {
+      "id": "tum-srl",
+      "name": "TUM \u00b7 Smart Robotics Lab projects",
+      "adapter": "tum-srl",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 1,
+      "last_success": "2026-10-12T21:27:21+00:00",
+      "last_attempt": "2026-10-12T21:27:21+00:00",
+      "error": null,
+      "collection_report": "1 published project lead; current availability needs confirmation"
+    },
+    {
+      "id": "tumai",
+      "name": "TUM.ai \u00b7 published events",
+      "adapter": "tumai",
+      "enabled": true,
+      "operational": true,
+      "last_record_count": 16,
+      "last_success": "2026-10-12T21:27:23+00:00",
+      "last_attempt": "2026-10-12T21:27:23+00:00",
+      "error": null,
+      "collection_report": "16 relevant events from 20 published entries; past editions excluded from upcoming views; end times incomplete"
+    },
+    {
+      "id": "workingstudentjobs",
+      "name": "Working Student Jobs \u00b7 secondary discovery",
+      "adapter": "pending",
+      "enabled": false,
+      "operational": null,
+      "last_record_count": null,
+      "last_success": null,
+      "last_attempt": null,
+      "error": null,
+      "collection_report": null
+    }
+  ]
+}

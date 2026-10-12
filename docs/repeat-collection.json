@@ -1,0 +1,78 @@
+[
+  {
+    "source": "anybotics",
+    "records": 3,
+    "same_identifiers": true,
+    "changed_records": 0,
+    "history_added": 0,
+    "note": "Unchanged; cached validated extraction"
+  },
+  {
+    "source": "cyber-niclas",
+    "records": 1,
+    "same_identifiers": true,
+    "changed_records": 0,
+    "history_added": 0,
+    "note": "1 official event; registration status and financial support require confirmation"
+  },
+  {
+    "source": "eth-movement",
+    "records": 1,
+    "same_identifiers": true,
+    "changed_records": 0,
+    "history_added": 0,
+    "note": "1 relevant projects from 1 official public lab feeds; 0 restricted descriptions; full SIROP search not collected"
+  },
+  {
+    "source": "ipa-students",
+    "records": 5,
+    "same_identifiers": true,
+    "changed_records": 0,
+    "history_added": 0,
+    "note": "5 relevant IPA student research roles from 6 details / 1 index pages; up to 8 pages and 50 details"
+  },
+  {
+    "source": "rpg",
+    "records": 24,
+    "same_identifiers": true,
+    "changed_records": 0,
+    "history_added": 0,
+    "note": "Unchanged; cached validated extraction"
+  },
+  {
+    "source": "rsl",
+    "records": 16,
+    "same_identifiers": true,
+    "changed_records": 0,
+    "history_added": 0,
+    "note": "16 relevant projects from 1 official public lab feeds; 2 restricted descriptions; full SIROP search not collected"
+  },
+  {
+    "source": "stuttgart-iff",
+    "records": 8,
+    "same_identifiers": true,
+    "changed_records": 2,
+    "history_added": 2,
+    "note": "8 relevant topics from 15 panels; 5 PDFs extracted; 2 PDF failures; maximum 2 PDFs/topic and 12 pages/PDF"
+  },
+  {
+    "source": "tum-cvg",
+    "error": "Cannot verify robots policy: (<HTTPSConnection(host='131.159.19.110', port=443) at 0x10461c690>, 'Connection to 131.159.19.110 timed out. (connect timeout=8)')"
+  },
+  {
+    "source": "tum-srl",
+    "records": 1,
+    "same_identifiers": true,
+    "changed_records": 0,
+    "history_added": 0,
+    "note": "1 published project lead; current availability needs confirmation"
+  },
+  {
+    "source": "tumai",
+    "records": 16,
+    "same_identifiers": true,
+    "changed_records": 0,
+    "history_added": 0,
+    "note": "Unchanged; cached validated extraction"
+  }
+]

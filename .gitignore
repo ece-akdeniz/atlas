@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/*
+!data/.gitkeep
+*.sqlite*
+.DS_Store
+
+# Private review artifacts and generated application documents
+review/
+docs/screenshots/
+output/
+tmp/
+*.log

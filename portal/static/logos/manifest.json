@@ -1,0 +1,61 @@
+{
+  "dlr.svg": {
+    "url": "https://www.dlr.de/static/media/LogoSimple.0621bfc3.svg",
+    "downloaded": "2026-10-12",
+    "purpose": "Organization identification; original brand artwork",
+    "bytes": 1772
+  },
+  "stuttgart.svg": {
+    "url": "https://www.iff.uni-stuttgart.de/system/modules/de.stuttgart.uni.v3.basics/resources/img/svg/logo-de.svg",
+    "downloaded": "2026-10-12",
+    "purpose": "Organization identification; original brand artwork",
+    "bytes": 17596
+  },
+  "tum.png": {
+    "url": "https://cvg.cit.tum.de/lib/tpl/inf9v4/favicon/android-icon-192x192.png",
+    "downloaded": "2026-10-12",
+    "purpose": "Organization identification; original brand artwork",
+    "bytes": 15349
+  },
+  "tumai.svg": {
+    "url": "https://www.tum-ai.com/assets/tum_ai_logo_new.svg",
+    "downloaded": "2026-10-12",
+    "purpose": "Organization identification; original brand artwork",
+    "bytes": 5213
+  },
+  "uzh.svg": {
+    "url": "https://rpg.ifi.uzh.ch/img/logo/uzh_logo_e_pos.svg",
+    "downloaded": "2026-10-12",
+    "purpose": "Organization identification; original brand artwork",
+    "bytes": 54209
+  },
+  "eth.svg": {
+    "url": "https://movement.ethz.ch/",
+    "section": "Official inline ETH header logo",
+    "downloaded": "2026-10-12"
+  },
+  "fraunhofer.png": {
+    "url": "https://rmkcdn.successfactors.com/9645d618/d5aee878-3c1b-47a5-9355-4.png",
+    "downloaded": "2026-10-12",
+    "purpose": "Organization identification; original brand artwork",
+    "bytes": 3963
+  },
+  "bosch.svg": {
+    "url": "https://www.bosch.com/media/tech/tech_images/favicon.svg",
+    "downloaded": "2026-10-12"
+  },
+  "cyber.svg": {
+    "url": "https://www.cyber-valley.de/en",
+    "section": "Official inline header logo",
+    "downloaded": "2026-10-12"
+  },
+  "anybotics.png": {
+    "url": "https://lever-client-logos.s3.amazonaws.com/835be098-154c-4c89-85bf-38cb1b2cdcc4-1566243935657.png",
+    "via": "https://jobs.lever.co/anybotics",
+    "downloaded": "2026-10-12"
+  },
+  "bmw.svg": {
+    "url": "https://www.bmwgroup.com/content/dam/grpw/websites/bmwgroup_com/logo/svg/Logo_BMW_GROUP.svg",
+    "downloaded": "2026-10-12"
+  }
+}
