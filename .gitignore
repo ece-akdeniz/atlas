@@ -13,3 +13,32 @@ docs/screenshots/
 output/
 tmp/
 *.log
+
+# Credentials and machine-specific configuration
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+credentials*.json
+secrets*.json
+.gcloud/
+.aws/
+.ssh/
+
+# Private documents, templates, generated artifacts and local research
+private/
+uploads/
+backups/
+*.pdf
+*.tex
+*.zip
+*.aux
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.xdv
+docs/source-setup-research.json
