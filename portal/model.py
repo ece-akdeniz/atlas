@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
-RANK_VERSION='2.1.0'
+RANK_VERSION='2.2.0'
 from portal.extraction import normalize_skill, SKILLS
 CATEGORIES=['jobs','research','events']
 STAGES=['Saved','Preparing','Applied','Interviewing','Offer','Rejected','Archived']
