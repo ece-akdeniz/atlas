@@ -1,0 +1,114 @@
+[
+  {
+    "id": "fius",
+    "name": "FIUS / University of Stuttgart student association",
+    "url": "https://www.fius.de/en/aushang/",
+    "limitations": []
+  },
+  {
+    "id": "sereact",
+    "name": "Sereact",
+    "url": "https://sereact.ai/en/careers",
+    "limitations": [
+      "api.ashbyhq.com robots HTTP401; HTML alternative permitted."
+    ]
+  },
+  {
+    "id": "node",
+    "name": "NODE Robotics",
+    "url": "https://node-robotics.com/career",
+    "limitations": [
+      "Personio XML endpoint404, not enabled; do not use XML adapter."
+    ]
+  },
+  {
+    "id": "neura",
+    "name": "NEURA Robotics",
+    "url": "https://jobs.neura-robotics.com/",
+    "limitations": [
+      "Student filter /categories/?filters[...] is JS shell; no result count may be inferred. Old neura-robotics.jobs.personio.de currently unrelated tenant; never use."
+    ]
+  },
+  {
+    "id": "quantum-systems",
+    "name": "Quantum Systems",
+    "url": "https://quantum-systems.com/career-at-quantum-systems/",
+    "limitations": [
+      "Default app2MB limit rejects board/feed/details; need source-specific bounded cap, not global unlimited fetch.",
+      "Official current docs require Careers Site API token from10Feb2027; do not reuse frontend tokens. XML offer feed exempt from token requirement."
+    ]
+  },
+  {
+    "id": "embotech",
+    "name": "Embotech",
+    "url": "https://www.embotech.com/career",
+    "limitations": [
+      "PDFcdn.prod.website-files.com robots403; cannotverifydetailunderpolicy. Preserve titles as leads/detailsincomplete."
+    ]
+  },
+  {
+    "id": "aionic-labs",
+    "name": "Aionic Labs",
+    "url": "https://aioniclabs.notion.site/team-careers",
+    "limitations": [
+      "NotionpublicURLreturnsJSshell; noverifiedvacancyorfeed.",
+      "AionicisnotAURONIQRobotics; identityassumptionmustremainexplicit."
+    ]
+  },
+  {
+    "id": "eth-agentic-systems",
+    "name": "ETH Agentic Systems Lab",
+    "url": "https://www.agenticsystemslab.org/",
+    "limitations": [
+      "Noindividualprojectvacancyverified;externalstudentpolicyrequireslinkedtrackdocumentreview."
+    ]
+  },
+  {
+    "id": "skydio",
+    "name": "skydio",
+    "url": "https://www.skydio.com/careers",
+    "limitations": []
+  },
+  {
+    "id": "wingtra",
+    "name": "wingtra",
+    "url": "https://wingtra.com/company/career/",
+    "limitations": []
+  },
+  {
+    "id": "destinus",
+    "name": "destinus",
+    "url": "https://www.destinus.com/careers",
+    "limitations": []
+  },
+  {
+    "id": "dufour",
+    "name": "dufour",
+    "url": "https://www.dufour.aero/careers",
+    "limitations": []
+  },
+  {
+    "id": "flyability",
+    "name": "flyability",
+    "url": "https://www.flyability.com/career",
+    "limitations": []
+  },
+  {
+    "id": "auterion",
+    "name": "auterion",
+    "url": "https://auterion.com/company/careers/",
+    "limitations": []
+  },
+  {
+    "id": "verity",
+    "name": "verity",
+    "url": "https://www.verity.net/careers",
+    "limitations": []
+  },
+  {
+    "id": "daedalean",
+    "name": "daedalean",
+    "url": "https://www.daedalean.ai/careers",
+    "limitations": []
+  }
+]

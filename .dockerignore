@@ -4,3 +4,16 @@ data
 .env
 __pycache__
 tests
+
+.env.*
+!.env.example
+private/
+uploads/
+backups/
+review/
+*.pdf
+*.tex
+*.zip
+*.log
+docs/screenshots/
+docs/source-setup-research.json

@@ -7,7 +7,9 @@ def upgrade():
     with db.connect() as c:
         if c.execute('SELECT count(*) FROM opportunities').fetchone()[0] and not str(db.DB_PATH).startswith('/tmp/'):
             dest=db.DB_PATH.parent/'backups'/('before-studio-schema-'+db.now().replace(':','').replace('+','_')+'.sqlite3');dest.parent.mkdir(exist_ok=True)
-            with sqlite3.connect(dest) as backup:c.backup(backup)
+            backup=sqlite3.connect(dest)
+            try:c.backup(backup)
+            finally:backup.close()
             dest.chmod(0o600)
         c.executescript('''
         CREATE TABLE IF NOT EXISTS uploads(id TEXT PRIMARY KEY,kind TEXT NOT NULL,name TEXT NOT NULL,hash TEXT NOT NULL,metadata TEXT NOT NULL,created TEXT NOT NULL,UNIQUE(kind,hash));

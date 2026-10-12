@@ -88,15 +88,20 @@ def local_draft(p,kind,template_id=None):
                 if profile.get(key):body+=r'\section*{'+label+'}\n'+ '\n\n'.join(tex(x) for x in profile[key])+'\n'
             source=source.replace('[[RESUME_BODY]]',body);meta['note']='Starter layout; choose your master template to preserve its formatting.'
     else:
+        if p['settings'].get('language','English')!='English':raise ValueError('Local starter letters support English. Enable model assistance for German, or edit the source directly.')
         selected=p['settings'].get('experiences') or list(range(min(2,len(profile.get('projects',[])))))
         experiences=[profile.get('projects',[])[i] for i in selected if isinstance(i,int) and 0<=i<len(profile.get('projects',[]))]
         body='Dear hiring team,\n\nI am applying for '+target['title']+' at '+target['organization']+'.'
         if profile.get('degree'):body+=' I am studying '+profile['degree']+'.'
         if experiences:body+='\n\n'+'\n\n'.join(experiences)
         body+='\n\nI would welcome the opportunity to discuss how this experience relates to the work described in your posting.\n\nKind regards,\n\n'+profile.get('name','')
-        source=re.sub(r'(\\begin\{letter\}\{).*?\}',lambda m:m[1]+tex(target['organization'])+'}',source,flags=re.S)
+        source=target_letter(source,target)
         source=populate_letter(source,tex(body));meta['note']='Evidence-only starter in English. Review and adapt the connections; model writing is separately opt-in.'
+    meta['diff']=diff_versions(meta.get('before',''),source) if meta.get('before') is not None else ''
     return new_document(p['id'],kind,source,meta)
+def target_letter(source,target):
+    # Replace only the recipient argument; keep the uploaded page layout and signature.
+    return re.sub(r'(\\begin\{letter\}\{).*?\}',lambda m:m[1]+tex(target['organization'])+'}',source,flags=re.S)
 def populate_letter(source,body):
     if '[[LETTER_BODY]]' in source:return source.replace('[[LETTER_BODY]]',body)
     pattern=r'(% ATLAS:BEGIN body\s*).*?(% ATLAS:END body)'

@@ -7,5 +7,7 @@ if [ ! -x .venv/bin/python ]; then
 fi
 .venv/bin/python -m portal.worker &
 worker_pid=$!
-trap 'kill "$worker_pid" 2>/dev/null || true' EXIT INT TERM
+.venv/bin/python -m portal.jobs &
+documents_pid=$!
+trap 'kill "$worker_pid" "$documents_pid" 2>/dev/null || true' EXIT INT TERM
 .venv/bin/python -m portal.app

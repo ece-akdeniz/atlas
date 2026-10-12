@@ -16,7 +16,7 @@ def normalize_skill(value):
     return 'ros 2' if re.fullmatch(r'ros[ -]?2',value) else value
 
 def clean(value): return ' '.join(str(value or '').replace('\u200b','').split())
-LABELS={'beschreibung':'description','ziel':'research_question','vorrausetzungen':'required','was du mitbringst':'required','was du bei uns tust (schwerpunkte nach absprache)':'activities','was du erwarten kannst':'benefits','objectives':'activities','project description':'description','voraussetzungen':'required','anforderungen':'required','ihr profil':'required','kontakt':'application_method','bewerbung':'application_method','aufgaben':'activities','ihre aufgaben':'activities','description':'description','goal':'research_question','goals':'research_question','research question':'research_question','was sie erwarten können':'benefits','relevante literatur':'references','ihre voraussetzungen':'required','requirements':'required','applicant requirements':'required','prerequisites':'required','required qualifications':'required','preferred qualifications':'preferred','your qualifications':'required','your contribution':'activities','tasks':'activities','activities':'activities','work packages':'activities','contact details':'application_method','contact':'application_method','student(s) name(s)':'internal','project report abstract':'internal','thesis type':'type','application':'application_method'}
+LABELS={'dein profil':'required','deine herausforderungen und aufgaben':'activities','das bieten wir':'benefits','human resources':'application_method','beschreibung':'description','ziel':'research_question','vorrausetzungen':'required','was du mitbringst':'required','was du bei uns tust (schwerpunkte nach absprache)':'activities','was du erwarten kannst':'benefits','objectives':'activities','project description':'description','voraussetzungen':'required','anforderungen':'required','ihr profil':'required','kontakt':'application_method','bewerbung':'application_method','aufgaben':'activities','ihre aufgaben':'activities','description':'description','goal':'research_question','goals':'research_question','research question':'research_question','was sie erwarten können':'benefits','relevante literatur':'references','ihre voraussetzungen':'required','requirements':'required','applicant requirements':'required','prerequisites':'required','required qualifications':'required','preferred qualifications':'preferred','your qualifications':'required','your contribution':'activities','tasks':'activities','activities':'activities','work packages':'activities','contact details':'application_method','contact':'application_method','student(s) name(s)':'internal','project report abstract':'internal','thesis type':'type','application':'application_method'}
 def sections(html):
     soup=BeautifulSoup(html,'html.parser')
     for n in soup(['script','style','nav','footer']):n.decompose()
@@ -69,7 +69,7 @@ def enrich(record,html,section=None,complete=True):
 def pdf_details(content):
     """Join PDF line wraps while retaining heading/list boundaries; no OCR inference."""
     import html
-    content=content.replace('','•').replace('●','•')
+    content=content.replace('','•').replace('●','•').replace('−','•')
     lines=[];buffer=[]
     for line in content.splitlines():
         line=line.strip()

@@ -1,3 +1,38 @@
+# Update validation — 13 October 2026
+
+51 isolated regression tests pass. Tests include the prior extraction/ranking/workflow checks plus four distinct RPG checklist items, transcript disambiguation, ZIP traversal rejection, CV import dedupe/preferences/Undo protection, immutable Studio snapshots and master files, authenticated document access, CSRF recovery, persistent local sessions, durable job dedupe/error retention, manual refresh/backoff, initial alert suppression, failed-source alert suppression and destination-change cancellation.
+
+Real macOS TeX sandbox checks passed: ordinary compilation succeeds, an absolute private-file read fails, and shell escape cannot create a file. The actual résumé and cover-letter templates compile from separate repaired working copies; master uploads are preserved. Atlas → Prepare application → Studio → template selection → local draft → worker compilation → private PDF page preview was exercised in an isolated database. Generated résumé and letter PDFs were visually inspected, each one page. The résumé retains all wording and only reorders intact project blocks. Local letters are explicitly English evidence-only starters; model quality has not been evaluated without a key.
+
+Backup and restore of a private validation copy passed SQLite integrity validation. Tests do not modify the personal workflow. Production-mode local tests protect Studio/state/documents behind sign-in; live HTTPS authentication and multi-device sharing remain unverified.
+
+## Collection snapshot
+
+177 stored records, 52 registered sources, 160 non-expired/non-closed stored records, and 23 integrations currently producing records. These are not 160 confirmed suitable vacancies. Full-time future options, speculative routes and uncertain projects are retained with labels.
+
+New successful collectors: FIUS 4 PDF postings; Auterion 1; Destinus 14; Dufour 1; ETH Agentic Systems 1 academic route; Flyability 1; NEURA 24; NODE 1; Quantum Systems 26; Sereact 3; Skydio 9; Verity Studios 2 (one published speculative route); Wingtra 2. Existing UZH RPG has 24 projects and the exact CV / bachelor's transcript / master's transcript / relevant-project-description checklist for the world-models project. CVG's manually added homepage is linked to its existing project collector. Both publisher and employer evidence are preserved for FIUS PDFs. Verity's role-specific location is not inferred from its headquarters.
+
+Checked versus uncertain visible records by priority area:
+- Stuttgart: jobs 4 / 4; research 7 / 7; events 1 / 0.
+- Munich: jobs 12 / 2; research 5 / 4; events 0 / 1. Nearby records keep actual cities, including Gilching, Garching and Oberpfaffenhofen; the filter/coverage label is Munich.
+- Zurich: jobs 16 / 9; research 39 / 4; events 0 / 0.
+
+An independently running collector completed scheduled cycles at 23:02, 23:10 and 23:17 UTC on 12 October (13 October locally). The repeat cycle across twelve established new adapters added zero records and changed zero payloads. The subsequent targeted reprocess updated one repaired FIUS description; Verity produced two validated records. This demonstrates the local scheduler loop, not operation while the laptop sleeps.
+
+## Remaining source limits
+
+BMW, Bosch, DLR RM and hackaTUM failures remain visible; previous records retain their prior successful verification. General SIROP and roboTUM remain link-only/access or integration limited. Aionic Labs is an explicit identity assumption with a linked student route, not a fabricated opening. Embotech and main Verity have access/rendering limitations; the separate Verity Studios collector is operational. Several legacy company/university registry entries still need adapters; registered URLs do not count as operational. NEURA covers its AI category, not every department. Current event coverage remains weak in Munich and Zurich. Official logos are used where identity/provenance was verified, with deliberate initials where suitable assets were unavailable.
+
+## Browser and deployment
+
+Verified real List rows, persisted view choice across navigation/reload, four-item checklist, separate Studio navigation, private PDF previews, and Profile's bottom CV Upload without the removed history panel. Mobile checks use 390 px; the native file-input overflow was found and repaired. Desktop and mobile themes were inspected. Source coverage includes horse/pretzel/Alps icons and visual worker state, without a duplicate topbar page name.
+
+Server/systemd/Caddy setup is prepared; no server has been purchased or deployed. No paid model call or Gmail email has been sent. Outstanding dependencies and price assumptions are in STUDIO-DEPLOYMENT.md. PDF sandbox behavior on Linux, remote restart recovery, remote scheduler operation, device sign-in/sync and real Gmail receipt remain release gates.
+
+---
+
+## Previous audit-time validation (preserved)
+
 # Validation — 12 October 2026
 
 ## Automated checks

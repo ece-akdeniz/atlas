@@ -11,11 +11,16 @@ def create_app(test=False):
     bootstrap()
     from portal.migrations import upgrade
     upgrade()
+    from portal.startups import upgrade as startup_upgrade
+    startup_upgrade()
     app=Flask(__name__)
     production=os.environ.get('PORTAL_ENV')=='production'
     secret=os.environ.get('SECRET_KEY')
     if production and (not secret or len(secret)<32 or not os.environ.get('PORTAL_PASSWORD_HASH') or not os.environ.get('PORTAL_ORIGIN')): raise RuntimeError('Production requires SECRET_KEY (32+ chars), PORTAL_PASSWORD_HASH and PORTAL_ORIGIN')
-    app.secret_key=secret or secrets.token_hex(32)
+    if not secret and not production:
+        secret=db.get_meta('development_session_secret')
+        if not secret:secret=secrets.token_hex(32);db.set_meta('development_session_secret',secret)
+    app.secret_key=secret
     app.config.update(SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Strict',SESSION_COOKIE_SECURE=production,MAX_CONTENT_LENGTH=12_000_000,PERMANENT_SESSION_LIFETIME=3600*12)
     app.config['SESSION_COOKIE_NAME']='atlas_'+hashlib.sha256(os.environ.get('PORTAL_ORIGIN','http://127.0.0.1:8765').encode()).hexdigest()[:8]
     app.config['TESTING']=test
@@ -73,10 +78,15 @@ def create_app(test=False):
             if problems: r['verification_warning']='Latest source check failed; last known record retained.'
         as_of=db.now()[:10]
         with db.connect() as c: runs=[dict(r) for r in c.execute('SELECT * FROM runs ORDER BY id DESC LIMIT 5')]
+        with db.connect() as c:queued=c.execute("SELECT COUNT(*) FROM requests WHERE status='queued'").fetchone()[0]
+        latest=runs[0] if runs else {}
+        refresh_info={'status':'queued' if queued and latest.get('status')!='running' else latest.get('status','Stored results'),'last_success':max((s['last_success'] for s in src if s['last_success']),default=None),'progress':db.get_meta('refresh_progress'),'skipped':db.get_meta('refresh_skipped',[]),'detail':json.loads(latest.get('detail','{}'))}
+        if isinstance(refresh_info['detail'],list):
+            refresh_info['message']=str(len(refresh_info['detail']))+' sources checked · '+str(sum(x.get('added',0) for x in refresh_info['detail']))+' added · '+str(sum(x.get('updated',0) for x in refresh_info['detail']))+' updated; cached results remain visible'
         from portal.checklist import for_record
         for r in data:r['application_checklist']=for_record(r)
         ordered=ranked(data,p,as_of)
-        return jsonify(profile=p,recommendations=[r['id'] for r in recommendations(ordered)],opportunities=ordered,sources=src,runs=runs,csrf=session['csrf'],saved_searches=db.get_meta('saved_searches',[]),worker_heartbeat=db.get_meta('worker_heartbeat'),as_of=as_of,local=not production,ranking_version=RANK_VERSION)
+        return jsonify(refresh=refresh_info,profile=p,recommendations=[r['id'] for r in recommendations(ordered)],opportunities=ordered,sources=src,runs=runs,csrf=session['csrf'],saved_searches=db.get_meta('saved_searches',[]),worker_heartbeat=db.get_meta('worker_heartbeat'),as_of=as_of,local=not production,ranking_version=RANK_VERSION)
     @app.get('/api/opportunities/<identity>/history')
     def history(identity):
         with db.connect() as c: records=[{'at':r['at'],'fields':json.loads(r['fields'])} for r in c.execute('SELECT * FROM changes WHERE opportunity_id=? ORDER BY id DESC LIMIT 30',(identity,))]
@@ -154,7 +164,7 @@ def create_app(test=False):
             last=c.execute('SELECT created FROM requests ORDER BY id DESC LIMIT 1').fetchone()
             if last and time.time()-datetime.fromisoformat(last['created']).timestamp()<900: return jsonify(error='Manual refresh is limited to once every 15 minutes. Source backoff still applies.'),429
             c.execute('INSERT INTO requests(created,status) VALUES(?,?)',(db.now(),'queued'))
-        return jsonify(ok=True,message='Queued for the independent worker. Only sources due for a check will run.'),202
+        return jsonify(ok=True,message='Queued for the independent worker. Sources will be rechecked unless checked within 15 minutes or in retry backoff. Cached results remain available.'),202
     @app.get('/api/export')
     def export():
         return jsonify(profile=db.get_meta('profile'),opportunities=db.rows(),sources=db.sources(),saved_searches=db.get_meta('saved_searches'))
@@ -163,9 +173,13 @@ def create_app(test=False):
         if (request.get_json() or {}).get('confirm')!='DELETE': return jsonify(error='Type DELETE to confirm'),400
         with db.connect() as c:
             c.execute('DELETE FROM workflow'); c.execute('DELETE FROM sessions')
+            for table in ['studio_documents','studio_projects','uploads','profile_versions','jobs','notification_events','generation_cache']:c.execute('DELETE FROM '+table)
+            c.execute("DELETE FROM meta WHERE key IN ('notifications','notification_baseline','active_cv_version')")
+        import shutil
+        shutil.rmtree(db.DB_PATH.parent/'private',ignore_errors=True)
         db.set_meta('profile',DEFAULT_PROFILE); db.set_meta('saved_searches',[])
         # Delete local personal import files and backups too, so restart cannot restore them.
-        for f in [db.DB_PATH.parent/'profile.json',*(db.DB_PATH.parent/'backups').glob('*.sqlite3')]:
+        for f in [db.DB_PATH.parent/'profile.json',*(db.DB_PATH.parent/'backups').glob('*.sqlite3'),*(db.DB_PATH.parent/'backups').glob('*-complete.tar.gz')]:
             if f.exists(): f.unlink()
         session.clear(); return jsonify(ok=True)
     @app.post('/api/logout')

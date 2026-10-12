@@ -1,0 +1,26 @@
+[Unit]
+Description=Atlas documents
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=atlas
+Group=atlas
+WorkingDirectory=/opt/atlas
+EnvironmentFile=/etc/atlas.env
+Environment=PORTAL_ENV=production PORTAL_DB=/var/lib/atlas/portal.sqlite3 PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ExecStart=/opt/atlas/.venv/bin/python -m portal.jobs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=120
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/atlas
+MemoryMax=2G
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

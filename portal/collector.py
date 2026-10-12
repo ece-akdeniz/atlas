@@ -33,8 +33,9 @@ def fetch(url,headers=None,redirects=0,allow_missing=False):
             # Redirect target receives fresh network and robots validation.
             if not allow_missing: robots(target)
             return fetch(target,headers,redirects+1,allow_missing)
-        raw=r.read(MAX_BYTES+1)
-        if len(raw)>MAX_BYTES: raise SourceError('Response exceeds 2 MB budget')
+        limit=8_388_608 if p.hostname=='career.quantum-systems.com' and p.path.startswith('/api/offers') else MAX_BYTES
+        raw=r.read(limit+1)
+        if len(raw)>limit: raise SourceError('Response exceeds source byte budget: '+str(limit))
         if r.status not in ([200,304,404,410] if allow_missing else [200,304]): raise SourceError('HTTP '+str(r.status)+'; last known records preserved')
         return r.status,dict(r.headers),raw
     finally: pool.close()
@@ -181,6 +182,9 @@ def collect_source(s):
     if adapter=='hackatum': records=hackatum(html,url)
     elif adapter=='rpg': records=rpg(html,url)
     elif adapter=='jsonld': records=jsonld(html,url)
+    elif adapter in ['recruitee','workable','greenhouse','lever-feed','ashby-html','personio-html','skydio-html','neura-html','join-html','agentic-route','verity-html','fius-pdf']:
+        from portal.startups import collect as collect_startup
+        records,note=collect_startup(s,html)
     elif adapter in ['dlr','tum-cvg','tum-srl','iff','tumai','lever','eth-projects','fraunhofer','cyber']:
         from portal.adapters import collect
         records,note=collect(s,html)
@@ -231,8 +235,18 @@ def refresh(force=False):
     import os
     from portal.seed import bootstrap
     bootstrap(); epoch=int(time.time())
-    due=[s for s in db.sources() if s.get('enabled') and s['adapter']!='pending' and (not s.get('next_due') or s['next_due']<=db.now())]
-    if not due: return []
+    sources=db.sources()
+    def eligible(s):
+        if not s.get('enabled') or s['adapter'] in ['pending','alias']:return False
+        if not s.get('next_due') or s['next_due']<=db.now():return True
+        return force and not s.get('error') and (not s.get('last_attempt') or epoch-datetime.fromisoformat(s['last_attempt']).timestamp()>=900)
+    due=[s for s in sources if eligible(s)]
+    skipped=[{'source':s['id'],'reason':'Setup not complete' if s['adapter'] in ['pending','alias'] else 'Retry backoff' if s.get('error') else 'Checked less than 15 minutes ago'} for s in sources if s.get('enabled') and not eligible(s)]
+    if force or due:db.set_meta('refresh_skipped',skipped if force else [])
+    if not due:
+        if force:
+            with db.connect() as c:c.execute('INSERT INTO runs(started,finished,status,detail) VALUES(?,?,?,?)',(db.now(),db.now(),'complete','[]'))
+        return []
     with db.connect() as c:
         c.execute('DELETE FROM locks WHERE until<?',(epoch,))
         try: c.execute('INSERT INTO locks VALUES(?,?)',('refresh',epoch+3600))
@@ -243,19 +257,23 @@ def refresh(force=False):
         for s in due:
             if not s.get('enabled') or s['adapter']=='pending': continue
             # A manual run does not override source-specific backoff/rate limits.
-            if s.get('next_due') and s['next_due']>db.now(): continue
+            if not eligible(s): continue
             db.set_meta('worker_heartbeat',db.now())
             count=0; error=None
+            before={r['id']:r['hash'] for r in []}
+            with db.connect() as c:before={r['id']:r['hash'] for r in c.execute('SELECT id,hash FROM opportunities')}
+            db.set_meta('refresh_progress',{'source':s['id'],'checked':len(results),'total':len(due)})
             try: count,note=collect_source(s)
             except Exception as e: error=str(e)[:500]; note=error
             at=db.now(); failures=s['failures']+1 if error else 0
             delay=min(72,2**min(failures,6)) if error else s.get('interval_hours',24)
-            due=(datetime.now(timezone.utc)+timedelta(hours=delay)).isoformat(timespec='seconds')
+            next_due=(datetime.now(timezone.utc)+timedelta(hours=delay)).isoformat(timespec='seconds')
             d={k:v for k,v in s.items() if k not in ['id','last_attempt','last_success','error','failures','next_due']}; d['status']='Failing' if error else 'Supported' if count>0 else 'Needs review' if s['adapter']=='reviewed' else 'No listings collected'; d['last_result']=note;
             if not error and not note.startswith('Unchanged'):d['collection_report']=note
             d['last_record_count']=count; d['operational']=bool(count and not error)
-            with db.connect() as c: c.execute('UPDATE sources SET data=?,last_attempt=?,last_success=?,error=?,failures=?,next_due=? WHERE id=?',(json.dumps(d),at,s['last_success'] if error else at,error,failures,due,s['id']))
-            results.append({'source':s['id'],'records':count,'error':error})
+            with db.connect() as c: c.execute('UPDATE sources SET data=?,last_attempt=?,last_success=?,error=?,failures=?,next_due=? WHERE id=?',(json.dumps(d),at,s['last_success'] if error else at,error,failures,next_due,s['id']))
+            with db.connect() as c:after={r['id']:r['hash'] for r in c.execute('SELECT id,hash FROM opportunities')}
+            results.append({'source':s['id'],'records':count,'added':len(after.keys()-before.keys()),'updated':sum(v!=before[k] for k,v in after.items() if k in before),'error':error})
         with db.connect() as c: c.execute('UPDATE runs SET finished=?,status=?,detail=? WHERE id=?',(db.now(),'partial' if any(x['error'] for x in results) else 'complete',json.dumps(results),run_id))
         return results
     finally:

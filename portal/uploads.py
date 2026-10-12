@@ -77,6 +77,21 @@ def parse_cv(upload):
             for lang in ['English','German','Turkish','French','Italian','Spanish']:
                 m=re.search(r'\b'+lang+r'\b\s*[(:–—-]?\s*(Native|Mother tongue|[ABC][12]|Fluent|Intermediate|Basic)',line,re.I)
                 if m:fields.setdefault('languages',{})[lang]=m[1]
+
+    if path.suffix=='.tex':
+        source=path.read_text(errors='replace')
+        # Keep a complete dated entry together; never split accomplishments into separate projects.
+        for title,key,macro in [('Education','education','resumeSubheading'),('Relevant Experience','experience','resumeSubheading'),('Experience','experience','resumeSubheading'),('Research \\& Projects','projects','resumeProjectHeading'),('Projects','projects','resumeProjectHeading')]:
+            match=re.search(r'\\section\{'+re.escape(title)+r'\}(.*?)(?=\\section\{|\\end\{document\})',source,re.S)
+            if not match:continue
+            blocks=re.split(r'(?=\\'+macro+r'\b)',match[1])[1:]
+            entries=[]
+            for block in blocks:
+                entry=' '.join(latex_text(block).split())
+                entry=re.sub(r'\[leftmargin=.*?\]','',entry)
+                if len(entry)>15:entries.append(entry[:1500])
+            if entries:fields[key]=entries
+
     for k,v in list(fields.items()):
         if isinstance(v,list):fields[k]=list(dict.fromkeys(v))[:100]
     return fields,text

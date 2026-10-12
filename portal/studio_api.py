@@ -1,4 +1,4 @@
-import io,json,zipfile,shutil
+import io,json,zipfile,shutil,secrets
 from flask import Blueprint,request,jsonify,render_template,session,send_file
 from portal import db,studio,uploads,jobs
 bp=Blueprint('studio',__name__)
@@ -8,6 +8,7 @@ def invalid(e):return jsonify(error=str(e)),400
 def index():return render_template('studio.html')
 @bp.get('/api/studio')
 def state():
+    session.setdefault('csrf',secrets.token_urlsafe(32))
     with db.connect() as c:
         projects=[{**json.loads(r['data']),'id':r['id'],'updated':r['updated']} for r in c.execute('SELECT * FROM studio_projects ORDER BY updated DESC')]
         imports=[{**dict(r),'metadata':json.loads(r['metadata'])} for r in c.execute('SELECT * FROM uploads ORDER BY created DESC')]
@@ -56,6 +57,23 @@ def project(identity):
         return jsonify(ok=True)
     if request.method=='PATCH':
         payload=request.get_json() or {}
+        if not isinstance(payload,dict):raise ValueError('Expected project fields')
+        for key in ['settings','progress','templates']:
+            if key in payload and not isinstance(payload[key],dict):raise ValueError('Invalid '+key)
+        if 'notes' in payload and (not isinstance(payload['notes'],str) or len(payload['notes'])>10000):raise ValueError('Invalid notes')
+        if 'status' in payload and payload['status'] not in ['Preparing','Ready','Applied','Archived']:raise ValueError('Invalid status')
+        if 'settings' in payload:
+            setting=payload['settings']
+            for key,allowed in [('language',['English','German']),('length',['One page','Brief (250 words)']),('tone',['Direct and professional','Warm and concise','Academic'])]:
+                if setting.get(key) not in allowed:raise ValueError('Invalid '+key)
+            if not isinstance(setting.get('experiences',[]),list) or any(type(i)!=int or i<0 or i>=len(p['profile'].get('projects',[])) for i in setting.get('experiences',[])):raise ValueError('Invalid selected experiences')
+        if 'progress' in payload:
+            valid={item['id'] for item in p['checklist']}
+            if any(k not in valid or type(v)!=bool for k,v in payload['progress'].items()):raise ValueError('Invalid checklist progress')
+        if 'templates' in payload:
+            for kind,identity in payload['templates'].items():
+                if kind not in ['letter','resume']:raise ValueError('Invalid template type')
+                if identity:studio.template_source(identity,kind)
         for key in ['settings','progress','templates','notes','status']:
             if key in payload:p[key]=payload[key]
         if len(json.dumps(p))>200000:raise ValueError('Project exceeds storage limit')
@@ -71,7 +89,7 @@ def draft(identity):
     return jsonify(studio.local_draft(p,kind,template))
 @bp.post('/api/studio/documents/<identity>')
 def edit(identity):
-    d=studio.document(identity);payload=request.get_json() or {};meta={**d['metadata'],'parent_id':identity};meta.pop('compilation',None);meta.pop('visual_reviewed',None)
+    d=studio.document(identity);payload=request.get_json() or {};meta={**d['metadata'],'parent_id':identity};meta.pop('compilation',None);meta.pop('visual_reviewed',None);meta['before']=d['source'];meta['diff']=studio.diff_versions(d['source'],payload.get('source',''))
     return jsonify(studio.new_document(d['project_id'],d['kind'],payload.get('source'),meta))
 @bp.post('/api/studio/documents/<identity>/compile')
 def compile_doc(identity):studio.document(identity);return jsonify(job_id=jobs.enqueue('compile',{'document_id':identity})),202
@@ -102,3 +120,20 @@ def download(identity,extension):
             z.writestr(main,d['source']);z.writestr('ATLAS-README.txt','Private application draft. Review claims and layout before submitting. Master template is unchanged.')
         buffer.seek(0);return send_file(buffer,mimetype='application/zip',as_attachment=True,download_name=d['kind']+'-source.zip')
     raise ValueError('Unknown download format')
+@bp.get('/api/studio/documents/<identity>/preview/<int:page>')
+def preview(identity,page):
+    studio.document(identity)
+    if not 1<=page<=10:raise ValueError('Invalid page')
+    path=uploads.root()/'compiled'/identity/f'page-{page}.png'
+    if not path.exists():raise ValueError('Page preview unavailable; download the PDF')
+    return send_file(path,mimetype='image/png')
+@bp.route('/api/notifications',methods=['GET','POST'])
+def notification_settings():
+    from portal import notifications as n
+    if request.method=='POST':n.configure(request.get_json() or {})
+    with db.connect() as c:events=[{k:r[k] for k in ['id','status','created','sent','error']} for r in c.execute('SELECT * FROM notification_events ORDER BY created DESC LIMIT 20')]
+    return jsonify(settings=n.settings(),configured=n.configured(),events=events)
+@bp.post('/api/notifications/test')
+def test_email():
+    from portal.notifications import queue_test
+    return jsonify(id=queue_test(),message='Test email queued; provider acceptance is not inbox delivery'),202

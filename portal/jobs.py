@@ -31,7 +31,7 @@ def once():
             from portal.writing import generate
             p=studio.project(data['project_id']);kind=data['kind'];template=data.get('template_id');generated=generate(p,kind,template,data.get('section'))
             source=studio.template_source(template,kind)
-            if kind=='letter':source=studio.populate_letter(source,'\n\n'.join(studio.tex(s['text']) for s in generated['sections']))
+            if kind=='letter':source=studio.populate_letter(studio.target_letter(source,p['target']),'\n\n'.join(studio.tex(s['text']) for s in generated['sections']))
             # Model résumé suggestions are review-only. Apply selected edits explicitly through the UI.
             d=studio.new_document(p['id'],kind,source,{'template_id':template,'method':'model-suggestions','generation':generated,'review_required':True,'before':source if kind=='resume' else None})
             result={'document_id':d['id']}

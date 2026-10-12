@@ -57,5 +57,47 @@
   "bmw.svg": {
     "url": "https://www.bmwgroup.com/content/dam/grpw/websites/bmwgroup_com/logo/svg/Logo_BMW_GROUP.svg",
     "downloaded": "2026-10-12"
+  },
+  "fius.svg": {
+    "url": "https://www.fius.de/fius-logo-white.svg",
+    "evidence_url": "https://www.fius.de/en/",
+    "identity": "FIUS / University of Stuttgart student association",
+    "downloaded": "2026-10-13"
+  },
+  "quantum-systems.png": {
+    "url": "https://careers.recruiteecdn.com/image/upload/q_auto,f_auto,w_400,c_limit/production/images/A4ZD/YM9jUG-JH5de.png",
+    "evidence_url": "https://career.quantum-systems.com/",
+    "identity": "Quantum Systems",
+    "downloaded": "2026-10-13"
+  },
+  "eth-agentic-systems.svg": {
+    "url": "https://agenticsystems.ethz.ch/logos/ETHxASL_Logo.svg?dpl=dpl_5Wj5xGcsJZqrzJZwBkXbZMoxTcLn",
+    "evidence_url": "https://agenticsystems.ethz.ch/",
+    "identity": "ETH Agentic Systems Lab",
+    "downloaded": "2026-10-13"
+  },
+  "wingtra.png": {
+    "url": "https://cdn-focjb.nitrocdn.com/RzUKmdHdCIStbdZtPxHaJLNXjEKZQBeM/assets/images/optimized/rev-1c476a4/wingtra.com/wp-content/uploads/elementor/thumbs/wingtra-logo-short-quv2trcyifcctp7xymhvdb6so9nk1g7pyn7hdyg4cg.png",
+    "evidence_url": "https://wingtra.com/company/career/",
+    "identity": "wingtra",
+    "downloaded": "2026-10-13"
+  },
+  "flyability.svg": {
+    "url": "https://www.flyability.com/hubfs/flyability_logo_horizontal_white_trimmed-2.svg",
+    "evidence_url": "https://www.flyability.com/career",
+    "identity": "flyability",
+    "downloaded": "2026-10-13"
+  },
+  "auterion.svg": {
+    "url": "https://auterion.com/wp-content/uploads/2026/05/Auterion_logo_symbol_white.svg",
+    "evidence_url": "https://auterion.com/company/careers/",
+    "identity": "auterion",
+    "downloaded": "2026-10-13"
+  },
+  "verity.png": {
+    "url": "https://www.veritystudios.com/assets/grx/verity-logo.png?v=1",
+    "evidence_url": "https://www.verity.net/careers",
+    "identity": "verity",
+    "downloaded": "2026-10-13"
   }
 }

@@ -93,7 +93,7 @@ class PortalTests(unittest.TestCase):
     def test_personal_delete_removes_profile_workflow_and_backup(self):
         from portal.app import create_app
         app=create_app(test=True);c=app.test_client();s=c.get('/api/state').get_json();headers={'X-CSRF-Token':s['csrf']}
-        (db.DB_PATH.parent/'backups').mkdir();(db.DB_PATH.parent/'backups'/'old.sqlite3').write_bytes(b'private')
+        (db.DB_PATH.parent/'backups').mkdir(exist_ok=True);(db.DB_PATH.parent/'backups'/'old.sqlite3').write_bytes(b'private')
         (db.DB_PATH.parent/'profile.json').write_text('{"name":"private"}')
         self.assertEqual(c.post('/api/delete-personal',json={'confirm':'DELETE'},headers=headers).status_code,200)
         self.assertFalse((db.DB_PATH.parent/'profile.json').exists());self.assertEqual(list((db.DB_PATH.parent/'backups').glob('*')),[]);self.assertEqual(db.get_meta('profile')['skills'],[])

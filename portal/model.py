@@ -42,6 +42,7 @@ def status(r,as_of):
     return list(dict.fromkeys(states)) or ['Verified']
 def evaluate(r,p,as_of):
     why=[]; gaps=[]; questions=[]; conflicts=[]
+    if r.get('explicit_conflict') and p.get('citizenship')=='Turkish':conflicts.append(r['explicit_conflict'])
     topics=sorted(set(r.get('tags',[]))&set(p.get('interests',[])))
     skills=sorted(set(normalize_skill(x) for x in r.get('skills',[]))&set(normalize_skill(x) for x in p.get('skills',[])))
     missing=sorted(set(normalize_skill(x) for x in r.get('required_skills',r.get('skills',[])))-set(normalize_skill(x) for x in p.get('skills',[])))
@@ -58,7 +59,7 @@ def evaluate(r,p,as_of):
     if hours and hours>p.get('max_hours',20):
         gaps.append(f"{hours:g} hours/week exceeds your {p.get('max_hours',20)}-hour preference.")
         if p.get('hours_hard'): conflicts.append('Your hard workload constraint is exceeded (a personal constraint, not an immigration ruling).')
-    elif r.get('workload')=='Full-time': gaps.append('Full-time commitment; compatibility with your study availability needs confirmation.')
+    elif str(r.get('workload','')).startswith('Full-time'): gaps.append('Full-time commitment; compatibility with your study availability needs confirmation.')
     if p.get('availability_start') and r.get('start_date') and r['start_date'][:10]<p['availability_start'][:10]: gaps.append('The published start precedes your available-from date; confirm flexibility.')
     if p.get('commitment_confirmed') and p.get('commitment'): questions.append('Your confirmed academic commitment needs a manual schedule check: '+p['commitment'])
     if not p.get('commitment_confirmed'): questions.append('Dates and workload of your upcoming academic commitment are not confirmed.')
@@ -98,7 +99,7 @@ def evaluate(r,p,as_of):
     points={k:round(factors[k]*weights.get(k,0),2) for k in factors}
     fit=round(sum(points.values()),2)
     states=status(r,as_of)
-    future=bool(conflicts or r.get('requires_graduation') or hours and hours>p.get('max_hours',20) or r.get('workload')=='Full-time')
+    future=bool(conflicts or r.get('requires_graduation') or hours and hours>p.get('max_hours',20) or str(r.get('workload','')).startswith('Full-time'))
     return {**r,'verification_label':('Last verified ' if 'Unverified' in states else 'Checked ')+(r.get('verified') or 'never')[:10],'match':{'points':fit,'factors':points,'version':RANK_VERSION,'why':why,'gaps':gaps,'questions':list(dict.fromkeys(questions)),'conflicts':conflicts,'eligibility':label,'authorization':legal,'future':future},'states':states}
 def ranked(records,p,as_of):
     evaluated=[evaluate(r,p,as_of) for r in records]

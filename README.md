@@ -10,12 +10,12 @@ Atlas is a standalone private web application with a SQLite database and an inde
 
 Open http://127.0.0.1:8765. This local mode accepts only loopback requests and has no password. Do not expose it through a tunnel or bind it to a public interface. The worker runs while the process is running, including when the browser is closed. Your laptop must remain awake. The production Docker worker runs continuously on the server.
 
-Your imported profile, saved listings, notes, run logs, and database are in `data/`, excluded from Git and Docker builds. Your original résumé has not been copied or uploaded. To import profile JSON on another installation: `python scripts/import_profile.py /private/path/profile.json`.
+Your imported profile, saved listings, notes, run logs, and database are in `data/`, excluded from Git and Docker builds. CVs and templates uploaded through Atlas are stored privately under data/private; original source files are never overwritten. To import profile JSON on another installation: `python scripts/import_profile.py /private/path/profile.json`.
 
 ## What works
 
 - Three discovery categories; company theses stay under research.
-- Exact-fact search/filtering, saved searches, dense cards, deterministic ranking with separate eligibility explanations.
+- Exact-fact search/filtering, saved searches, persistent Cards / List views, deterministic ranking with separate eligibility explanations.
 - Detail panel with source links, substantive verification dates, missing-field labels, uncertainty, change history.
 - Bookmarks, dismissals, private notes, seven application stages, three-item comparison, deadline/event calendar.
 - Editable CV-derived profile and weights, private export and deletion.
@@ -42,3 +42,9 @@ node --check portal/static/app.js
 Tests use temporary databases and synthetic fixtures. Synthetic test data is never seeded into the portal. Public bootstrapping records are human-reviewed official source facts with fixed review dates, not invented demo listings. Live collector status may be newer than the substantive human review.
 
 See [deployment instructions](docs/DEPLOYMENT.md), [product and architecture](docs/PRODUCT.md), and [validation record](docs/VALIDATION.md).
+
+## Application Studio
+
+Open `/studio`, or choose **Prepare application** on a listing. Start the document worker separately with `.venv/bin/python -m portal.jobs`. Choose an uploaded template, create a version, edit the LaTeX and compile. Local drafting needs no model key. The compiler fails closed when its OS sandbox or TeX is unavailable. Uploaded master files remain unchanged.
+
+See [server setup and remaining dependencies](docs/STUDIO-DEPLOYMENT.md). The existing Docker recipe serves Atlas and collection; the native systemd configuration is the prepared path for sandboxed Studio compilation. Neither has been verified on a remote production host in this update.
