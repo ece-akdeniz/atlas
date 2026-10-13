@@ -1,3 +1,5 @@
+> **Latest decision — 13 October 2026:** The user ruled out both this Mac and an always-on home computer. Home hosting is therefore an unused alternative, not the deployment target. The $0/month constraint remains; no domain/server purchase is authorized. Oracle Always Free is a candidate pending user account eligibility, regional capacity and acceptance of idle-resource reclamation risk. No cloud deployment has occurred.
+
 > **Current decision — 13 October 2026:** $0/month overrides the earlier paid-hosting acceptance. Follow [FREE-HOME-HOSTING.md](FREE-HOME-HOSTING.md) for private Tailscale home hosting. Do not buy a domain/server. Paid cloud instructions below are historical/optional, not the active plan. Home-host uptime requires the host awake; paid writing/email APIs are disabled in the new home configuration.
 
 # Product and deployment ledger — 2026-10-13T14:39:26+00:00

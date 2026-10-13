@@ -1,3 +1,5 @@
+> **Latest decision — 13 October 2026:** The user ruled out both this Mac and an always-on home computer. Home hosting is therefore an unused alternative, not the deployment target. The $0/month constraint remains; no domain/server purchase is authorized. Oracle Always Free is a candidate pending user account eligibility, regional capacity and acceptance of idle-resource reclamation risk. No cloud deployment has occurred.
+
 # Private Atlas hosting with no subscription cost
 
 Checked 13 October 2026 against commit 274ff02 and the actual source. This decision supersedes the paid-server/domain proposal: **do not purchase hosting or a domain under the current $0 constraint**.
