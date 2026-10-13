@@ -111,5 +111,159 @@
     "source": "https://www.robotum.info/events",
     "asset": "https://www.robotum.info/assets/robotum-logo-blue-white-CKaiFXFT.svg",
     "verified": "2026-10-13T08:11:01+00:00"
+  },
+  "destinus.svg": {
+    "identity": "destinus",
+    "evidence_url": "https://www.destinus.com/",
+    "url": "https://cdn.prod.website-files.com/696aa687f423696991481f4a/696fd8f88792f5cd219ec970_destinus-logo.svg",
+    "verified": "2026-10-13",
+    "bytes": 8388
+  },
+  "dufour.png": {
+    "identity": "dufour",
+    "evidence_url": "https://www.dufour.aero/",
+    "url": "https://cdn.prod.website-files.com/678b4adff01002da365d6db2/6ab63fe1fc9d7e65b3843a22_DA-Long-RGB-Vector.png",
+    "verified": "2026-10-13",
+    "bytes": 54470
+  },
+  "neura.svg": {
+    "identity": "neura",
+    "evidence_url": "https://neura-robotics.com/",
+    "url": "https://neura-robotics.com/wp-content/uploads/2025/05/neura_logo_white.svg",
+    "verified": "2026-10-13",
+    "bytes": 2156
+  },
+  "aionic.svg": {
+    "identity": "aionic",
+    "evidence_url": "https://www.aioniclabs.ai/",
+    "url": "https://www.aioniclabs.ai/uploads/aionic-labs-icon-app.svg",
+    "verified": "2026-10-13",
+    "bytes": 5640
+  },
+  "kube.jpg": {
+    "identity": "kube",
+    "evidence_url": "https://www.khoch3.de/",
+    "url": "https://www.khoch3.de/wp-content/uploads/2023/08/Logo-blauer-Hintergrund.jpg",
+    "verified": "2026-10-13",
+    "bytes": 17125
+  },
+  "airbus.svg": {
+    "identity": "airbus",
+    "evidence_url": "https://www.airbus.com/en",
+    "url": "https://www.airbus.com/themes/custom/airbus_web_experience_ui/logo.svg",
+    "verified": "2026-10-13",
+    "bytes": 1040
+  },
+  "porsche.png": {
+    "identity": "porsche",
+    "evidence_url": "https://www.porsche.com/germany/?cs_redirect=1",
+    "url": "https://cdn.ui.porsche.com/porsche-design-system/meta-icons/apple-touch-icon-180x180.bdf11cc.png",
+    "verified": "2026-10-13",
+    "bytes": 8209
+  },
+  "hackzurich.svg": {
+    "identity": "hackzurich",
+    "evidence_url": "https://hackzurich.com/",
+    "url": "https://hackzurich.com/assets/logo_hackzurich.svg",
+    "verified": "2026-10-13",
+    "bytes": 3421
+  },
+  "hackatum.png": {
+    "identity": "hackatum",
+    "evidence_url": "https://hack.tum.de/",
+    "url": "https://hack.tum.de/wp-content/uploads/2021/09/cropped-hackaTUMfavicon-192x192.png",
+    "verified": "2026-10-13",
+    "bytes": 4311
+  },
+  "daad.svg": {
+    "identity": "daad",
+    "evidence_url": "https://www.daad.de/en/",
+    "url": "https://www.daad.de/_nuxt/logo-small-light.BeMXrHNY.svg",
+    "verified": "2026-10-13",
+    "bytes": 2025
+  },
+  "workingstudent.svg": {
+    "identity": "workingstudent",
+    "evidence_url": "https://www.workingstudentjobs.de/de",
+    "url": "https://www.workingstudentjobs.de/icon.svg?icon.1l_8nf1pvje7a.svg",
+    "verified": "2026-10-13",
+    "bytes": 1439
+  },
+  "hackathonhub.png": {
+    "identity": "hackathonhub",
+    "evidence_url": "https://hackathonhub.eu/events",
+    "url": "https://hackathonhub.eu/apple-touch-icon.png?v=6",
+    "verified": "2026-10-13",
+    "bytes": 29146,
+    "usable": false,
+    "note": "Rejected after rendered audit: not recognizable at UI size; not mapped."
+  },
+  "sereact.svg": {
+    "identity": "sereact",
+    "evidence_url": "https://sereact.ai/",
+    "section": "Official header inline SVG svg[viewbox=\"0 0 696 101\"]",
+    "verified": "2026-10-13"
+  },
+  "embotech.svg": {
+    "identity": "embotech",
+    "evidence_url": "https://embotech.ai/",
+    "section": "Official header inline SVG svg[viewbox=\"0 0 239 44\"]",
+    "verified": "2026-10-13"
+  },
+  "eta.svg": {
+    "identity": "eta",
+    "evidence_url": "https://www.eta-uv.de/de/",
+    "section": "Official header inline SVG svg.logo-sm",
+    "verified": "2026-10-13"
+  },
+  "start-hack.svg": {
+    "identity": "START Hack",
+    "evidence_url": "https://www.startglobal.org/start-hack",
+    "url": "https://framerusercontent.com/images/2rAbUNsRz1IyOojaJ88n5j1eBu0.svg?width=222&height=90",
+    "verified": "2026-10-13"
+  },
+  "node.png": {
+    "identity": "NODE Robotics",
+    "evidence_url": "https://node-robotics-gmbh.jobs.personio.de/?language=en",
+    "url": "https://assets.cdn.personio.de/logos/76249/social/6fb0581864eacbe010da5b7ac9b13596.png",
+    "verified": "2026-10-13"
+  },
+  "auroniq.png": {
+    "identity": "auroniq",
+    "evidence_url": "https://auroniq-robotics.com/",
+    "url": "https://auroniq-robotics.com/wp-content/uploads/2026/07/AuroniqLogo.png",
+    "verified": "2026-10-13"
+  },
+  "max-planck.png": {
+    "identity": "max-planck",
+    "evidence_url": "https://www.mpg.de/en",
+    "url": "https://www.mpg.de/assets/touch-icon-180x180-a3e396f9294afe6618861344bef35fc0075f9631fe80702eb259befcd682a42c.png",
+    "verified": "2026-10-13"
+  },
+  "mercedes.webp": {
+    "identity": "mercedes",
+    "evidence_url": "https://jobs.mercedes-benz.com/",
+    "url": "https://jobs.mercedes-benz.com/apple-touch-icon.webp",
+    "verified": "2026-10-13"
+  },
+  "tum.svg": {
+    "identity": "Technical University of Munich",
+    "url": "https://www.tum.de/typo3conf/ext/in2template/Resources/Public/Images/Backend/tum-logo.svg",
+    "evidence_url": "https://www.tum.de/en/",
+    "verified": "2026-10-13",
+    "note": "Replaces CVG eye favicon incorrectly used for the parent university."
+  },
+  "verity-main.png": {
+    "identity": "Verity",
+    "evidence_url": "https://verity-ag.breezy.hr/",
+    "url": "https://gallery-cdn.breezy.hr/09dd30d7-5fdf-4db2-ba30-11f48401a477/breezy-logo.png",
+    "verified": "2026-10-13",
+    "note": "Main employer brand, separate from Verity Studios artwork."
+  },
+  "eth-ai-club.svg": {
+    "source_url": "https://www.ethaiclub.org/logo-2d.svg",
+    "official_page": "https://www.ethaiclub.org/",
+    "verified": "2026-10-13",
+    "identity": "ETH AI Club"
   }
 }

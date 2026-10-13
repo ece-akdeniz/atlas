@@ -33,3 +33,11 @@
 @media(max-width:760px){.searchbar{flex-wrap:nowrap}.searchbar input{flex-basis:0}.cv-panel form{grid-template-columns:minmax(0,1fr)}.cv-panel form input{min-width:0;width:100%}.cv-panel form button{min-width:0}}
 
 .import-result{width:min(760px,calc(100vw - 24px));max-height:85dvh;padding:0;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:16px}.import-result .detail-body{overflow:auto;max-height:70dvh}.import-choice{border-top:1px solid var(--border);margin-top:20px;padding-top:12px}.import-choice p{max-width:65ch;overflow-wrap:anywhere}
+
+/* Three city shortcuts share the full location filter. */
+.city-shortcuts{display:flex;gap:8px;margin:0 0 12px}.city-shortcuts button{flex:0 1 auto;min-height:38px;padding:6px 12px}.city-shortcuts .icon{width:19px;height:19px}.profile-layout>.panel:first-child .footer-note{margin-top:12px}
+@media(max-width:760px){.city-shortcuts{gap:6px}.city-shortcuts button{flex:1;padding:6px 8px;font-size:13px}.city-shortcuts .icon{width:17px;height:17px}}
+
+.provider-status{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding:16px}.provider-status>div{flex:1}.provider-status details{flex-basis:100%;font-size:13px}.provider-status code{display:block;overflow-wrap:anywhere;margin:10px 0}
+
+.profile-layout>.panel:first-child{grid-column:1 / -1}

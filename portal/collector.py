@@ -165,13 +165,17 @@ def hackatum(html,url):
     return [r]
 
 def collect_source(s):
-    url=s['url']; robots(url)
+    url=s['url']
+    if s['adapter']!='robotum-rendered':robots(url)
     with db.connect() as c: cached=c.execute('SELECT * FROM cache WHERE url=?',(url,)).fetchone()
     headers={}
     if cached and cached['version']==VERSION and s['adapter'] in ['rpg','hackatum','jsonld','tumai','lever']:
         if cached['etag']: headers['If-None-Match']=cached['etag']
         if cached['modified']: headers['If-Modified-Since']=cached['modified']
-    status,h,raw=fetch(url,headers)
+    if s['adapter']=='robotum-rendered':
+        from portal.rendered_sources import render
+        status,h,raw=200,{},render(s['adapter'],url).encode()
+    else:status,h,raw=fetch(url,headers)
     digest=hashlib.sha256(raw).hexdigest()
     at=db.now()
     if cached and s['adapter'] in ['rpg','hackatum','jsonld','tumai','lever'] and (status==304 or (digest==cached['hash'] and cached['version']==VERSION)):
@@ -182,7 +186,13 @@ def collect_source(s):
     html=raw.decode('utf-8','replace')
     if any(x in html.lower() for x in ['cf-chl-platform','captcha challenge','verify you are human']): raise SourceError('Access challenge detected; no bypass attempted')
     adapter=s['adapter']
-    if adapter=='hackatum': records=hackatum(html,url)
+    if adapter=='eth-ai-events':
+        from portal.community_events import ethai
+        records,note=ethai(html,s)
+    elif adapter=='robotum-rendered':
+        from portal.rendered_sources import robotum_records
+        records,note=robotum_records(html,url)
+    elif adapter=='hackatum': records=hackatum(html,url)
     elif adapter=='rpg': records=rpg(html,url)
     elif adapter=='jsonld': records=jsonld(html,url)
     elif adapter in ['recruitee','workable','greenhouse','lever-feed','ashby-html','personio-html','skydio-html','neura-html','join-html','agentic-route','verity-html','fius-pdf','embotech-pdf','breezy-html']:

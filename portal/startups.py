@@ -8,6 +8,7 @@ from portal.adapters import base,document,evidence
 from portal.extraction import enrich,clean,recognize_skills,pdf_details,sentences
 from portal.model import tags
 SOURCES=[
+ ('eth-ai-club','ETH AI Club · upcoming events','https://www.ethaiclub.org/','eth-ai-events'),
  ('quantum-systems','Quantum Systems','https://career.quantum-systems.com/api/offers','recruitee'),
  ('sereact','Sereact','https://jobs.ashbyhq.com/sereact','ashby-html'),
  ('wingtra','Wingtra','https://api.lever.co/v0/postings/wingtra-2?mode=json','lever-feed'),
@@ -16,6 +17,7 @@ SOURCES=[
  ('destinus','Destinus','https://www.workable.com/api/accounts/destinusgroup?details=true','workable'),
  ('neura','NEURA Robotics','https://jobs.neura-robotics.com/category/ai/58bd0246-cfdb-4930-b2f3-bc758471b5a6','neura-html'),
  ('dufour','Dufour Aerospace','https://join.com/companies/dufour','join-html'),
+ ('robotum','roboTUM · organizer events','https://www.robotum.info/events','robotum-rendered'),
  ('eth-agentic-systems','ETH Agentic Systems Lab','https://agenticsystems.ethz.ch/','agentic-route'),
  ('node','NODE Robotics','https://node-robotics-gmbh.jobs.personio.de/?language=en','personio-html'),
  ('skydio','Skydio','https://www.skydio.com/careers','skydio-html'),
@@ -26,7 +28,7 @@ SOURCES=[
 ]
 TECH=r'robot|autonom|computer vision|deep learning|machine learning|perception|navigation|slam|sensor|flight|control|state estimation|software|mechatronic|agentic|rag\b|ki-|künstliche'
 STUDENT=r'intern|student|trainee|thes[ei]s|masterarbeit|praktik|werkstudent|junior|graduate'
-SENIOR=r'senior|principal|lead\b|head\b|director|staff\b|manager|sales|marketing|recruit|finance|account|devops|business'
+SENIOR=r'financial|revenue|production planner|quality control|senior|principal|lead\b|head\b|director|staff\b|manager|sales|marketing|recruit|finance|account|devops|business'
 def relevant(title):return bool(re.search(TECH,title,re.I)) and not re.search(SENIOR,title,re.I) or bool(re.search(STUDENT,title,re.I) and re.search(r'engineering|r&d|industrialization|electronics',title,re.I)) and not re.search(SENIOR,title,re.I)
 def appdata(raw):
     m=re.search(r'window\.__appData\s*=\s*',raw)
@@ -39,7 +41,7 @@ def role(s,title,url,identity,body,city=None,country=None,requirements=None,empl
     if city in ['München']:city='Munich'
     r=base(title,url,s['name'],city,category);r['organization_id']=s['id'];r['publisher_id']=str(identity);r['employer']=s['name'];r['publisher']=s['name'];r['country']=country
     r['metro']='Munich' if city and re.search(r'Gilching|Garching|Oberpfaffenhofen|Munich',city,re.I) else 'Stuttgart' if city and re.search(r'Stuttgart|Metzingen|Schönaich|Weissach',city,re.I) else 'Zurich' if city and re.search(r'Zurich|Zürich|Dübendorf',city,re.I) else city
-    r['type']=title if category=='research' else 'Working student' if re.search(r'working student|werkstudent',title,re.I) else 'Internship' if re.search(r'intern|praktik|trainee',title,re.I) else 'Full-time role' if re.search('full.?time',str(employment),re.I) else 'Role'
+    r['type']=title if category=='research' or re.search(r'working student|werkstudent|intern|praktik',title,re.I) else 'Working student' if re.search(r'working student|werkstudent',title,re.I) else 'Internship' if re.search(r'intern|praktik|trainee',title,re.I) else 'Full-time role' if re.search('full.?time',str(employment),re.I) else 'Role'
     content=html.unescape(body or '');enrich(r,content,complete=True);plain=BeautifulSoup(content,'html.parser').get_text('\n',strip=True)
     # Section headings vary across ATSs; retain their actual local evidence.
     soup=BeautifulSoup(content,'html.parser')
@@ -153,9 +155,23 @@ def collect(s,raw):
             if 'spontaneous' in title.lower():r['record_kind']='application_route';r['status']='unverified';r['summary']='Published speculative-application route. No particular vacancy or employer interest is implied.'
             records.append(r)
     elif adapter=='agentic-route':
-        soup=BeautifulSoup(raw,'html.parser');a=next((a for a in soup.select('a[href]') if 'AI-Research-Track-Student-Applications' in a['href']),None)
-        if not a:raise ValueError('Student research-track link missing; route needs review')
-        r=base('AI Research Track · student application route',s['url'],s['name'],'Zurich','research','academic_route');r['publisher_id']='ai-research-track';r['organization_id']=s['id'];r['summary']='Published route to the Agentic Systems Lab student research track. Individual projects and external-student access require confirmation.';r['application_url']=urljoin(s['url'],a['href']);r['status']='unverified';r['extraction_complete']=False;r['field_states']={k:{'state':'incomplete'} for k in ['required','activities','application_method']};r['verification_warning']='Linked track details are not extracted; this is an academic route, not a verified opening';records=[r];total=1
+        soup=BeautifulSoup(raw,'html.parser')
+        tracks=[('AI-Research-Track-Student-Applications','ai-research-track','AI Research'),('AI-Transformation-Track-Student-Applications','ai-transformation-track','AI Transformation'),('AI-Founder-Track-Student-Applications','ai-founder-track','AI Founder'),('Affiliate-Visiting-Researcher-Track','affiliate-researcher-track','Affiliate Researcher')]
+        for fragment,identity,label in tracks:
+            a=next((a for a in soup.select('a[href]') if fragment in a['href']),None)
+            if not a:raise ValueError('Published '+label+' track missing; incomplete index needs review')
+            source_text=clean(a.get_text(' ',strip=True))
+            url=s['url'] if identity=='ai-research-track' else urljoin(s['url'],a['href'])
+            r=base(label+' · '+('student application route' if identity!='affiliate-researcher-track' else 'research collaboration route'),url,s['name'],'Zurich','research','academic_route')
+            r.update(publisher_id=identity,organization_id=s['id'],originating_page=s['url'],application_url=urljoin(s['url'],a['href']),status='unverified',extraction_complete=False)
+            r['summary']=re.sub(r'^(For students|For researchers)\s*'+re.escape(label)+r'\s*','',source_text).removesuffix('Apply now').removesuffix('Learn More').strip()[:420]
+            r['type']='Academic route'
+            r['tags']=tags(source_text)
+            r['field_states']={k:{'state':'incomplete'} for k in ['required','activities','application_method']}
+            evidence(r,'summary',r['summary'],source_text,'Published opportunity track',s['url'])
+            r['verification_warning']='Published academic route; linked application conditions still need confirmation. Not a confirmed individual opening.'
+            records.append(r)
+        total=len(records)
     elif adapter in ['personio-html','skydio-html','neura-html','join-html']:
         soup=BeautifulSoup(raw,'html.parser');links={}
         if adapter=='neura-html':
@@ -238,20 +254,25 @@ def collect(s,raw):
             for field,ev in r['field_evidence'].items():ev['page']=next((i+1 for i,t in enumerate(pages) if ev.get('excerpt','')[:50] in clean(t)),None)
             records.append(r)
     else:raise ValueError('Unsupported startup adapter')
+    if adapter=='agentic-route':return records,f'{len(records)} published academic application tracks; linked Notion instructions incomplete; no individual vacancy claim.'
     return records,f'{len(records)} relevant validated records from {total} published entries; official publisher IDs; no title-only quota. All index entries inspected; eligible detail pages followed.'
 
 def upgrade():
-    if db.get_meta('startup_registry')=='4':return
+    if db.get_meta('startup_registry')=='6':return
     with db.connect() as c:
         for identity,name,url,adapter in SOURCES:
-            data={'name':name,'url':url,'adapter':adapter,'category':'research' if identity=='807d62512a4a' else 'jobs','enabled':True,'interval_hours':24,'status':'Pending first collection','organization_id':identity,'coverage':'Official feed or bounded index-to-detail collector; excludes senior and unrelated roles.','operational':False}
+            data={'name':name,'url':url,'adapter':adapter,'category':'events' if identity in ['robotum','eth-ai-club'] else 'research' if identity in ['807d62512a4a','eth-agentic-systems'] else 'jobs','enabled':True,'interval_hours':24,'status':'Pending first collection','organization_id':identity,'coverage':'Official feed or bounded index-to-detail collector; excludes senior and unrelated roles.','operational':False}
+            if identity=='robotum':data['coverage']='Public rendered organizer index, at most 100 unique events. Past editions retained as closed; event-detail extraction incomplete. No access controls bypassed.'
+            if identity=='eth-agentic-systems':data['coverage']='Four officially published application tracks; academic routes, not confirmed individual openings. Linked Notion instructions incomplete.'
             old=c.execute('SELECT data FROM sources WHERE id=?',(identity,)).fetchone()
             if old:
                 existing=json.loads(old[0])
                 if existing.get('adapter')==adapter and existing.get('url')==url:
-                    existing.setdefault('organization_id',identity);data=existing
+                    existing.setdefault('organization_id',identity)
+                    if identity in ['robotum','eth-agentic-systems']:existing['coverage']=data['coverage'];existing['category']=data['category']
+                    data=existing
                 else:
-                    data={**existing,**{k:data[k] for k in ['name','url','adapter','enabled','status','organization_id','operational']}}
+                    data={**existing,**{k:data[k] for k in ['name','url','adapter','category','enabled','status','organization_id','operational','coverage']}}
                     c.execute('UPDATE sources SET next_due=NULL WHERE id=?',(identity,))
             c.execute('INSERT INTO sources(id,data) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',(identity,json.dumps(data)))
         aliases={'a4c63ea3bfa3':('tum-cvg','Covered by TUM CVG project collector; homepage retained as source history.'),'daedalean':('destinus','Shared official Destinus board; Daedalean affiliation retained when named in the posting.')}
@@ -276,4 +297,4 @@ def upgrade():
             record.setdefault('publisher_identifiers',{})['breezy']=identity
             body=json.dumps(record,sort_keys=True,ensure_ascii=False)
             c.execute('UPDATE opportunities SET data=?,hash=? WHERE id=?',(body,hashlib.sha256(body.encode()).hexdigest(),row['id']))
-    db.set_meta('startup_registry','4')
+    db.set_meta('startup_registry','6')

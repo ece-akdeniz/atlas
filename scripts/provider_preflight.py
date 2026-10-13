@@ -1,11 +1,9 @@
-"""Verify account model access without sending any CV or posting content."""
-import os,requests
-from portal.writing import RATES
-model=os.getenv('STUDIO_MODEL','gpt-6-luna')
-if model not in RATES:raise SystemExit('Model has no verified price entry')
-key=os.getenv('OPENAI_API_KEY')
-if not key:raise SystemExit('OPENAI_API_KEY is not configured')
-r=requests.get('https://api.openai.com/v1/models/'+model,headers={'Authorization':'Bearer '+key},timeout=20)
-if r.status_code!=200:raise SystemExit('Account model availability check failed: HTTP '+str(r.status_code))
-print('Model available to this account:',r.json().get('id'))
-print('No profile data sent and no generation request made. Test writing quality separately.')
+"""Check account model access without sending CV/posting content or making a generation."""
+from portal import providers
+try:
+    result=providers.preflight()
+    print('Account model available:',result['model'])
+    print('Atlas monthly limit: $'+str(result['monthly_budget_usd']))
+    print('No profile data sent; writing quality and token usage require a separate consented generation.')
+except ValueError as e:raise SystemExit(str(e))
+except Exception as e:raise SystemExit('Provider connectivity check failed: '+type(e).__name__)

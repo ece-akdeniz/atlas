@@ -1,3 +1,4 @@
+from portal import providers
 """Quiet, evidence-gated alerts. No inbox access; durable outbox and provider idempotency."""
 import os,re,json,hashlib,uuid,time
 from datetime import datetime,timedelta,timezone
@@ -66,7 +67,7 @@ def discover():
             cursor=conn.execute("INSERT OR IGNORE INTO notification_events(id,opportunity_id,fingerprint,payload,status,created) VALUES(?,?,?,?,?,?)",(uuid.uuid4().hex,r['id'],fp,json.dumps(payload),'queued',db.now()));count+=cursor.rowcount
     db.set_meta('notification_baseline',baseline);return count
 
-def configured():return bool(os.getenv('RESEND_API_KEY') and os.getenv('ATLAS_EMAIL_FROM') and os.getenv('PORTAL_ORIGIN','').startswith('https://'))
+def configured():return bool(providers.get('RESEND_API_KEY') and providers.get('ATLAS_EMAIL_FROM') and os.getenv('PORTAL_ORIGIN','').startswith('https://'))
 def queue_test():
     c=settings()
     if not configured():raise ValueError('Configure RESEND_API_KEY, a verified ATLAS_EMAIL_FROM domain, and the HTTPS PORTAL_ORIGIN first')
@@ -127,9 +128,9 @@ def deliver():
             p=json.loads(row['payload'])
             if p.get('test'):parts.append('This is a test email from Atlas. No opportunity alert was triggered.');continue
             parts.append('\n'.join([p['title'],p['organization']+' · '+str(p['city'])+' · '+str(p['type']),'Why: '+'; '.join(p['why'][:2]),'Confirm: '+'; '.join(p['uncertainty']),'Deadline: '+str(p.get('deadline') or 'Not stated'),p.get('change') or '',os.environ['PORTAL_ORIGIN']+'/#opportunity='+row['opportunity_id'],p['url']]))
-        body={'from':os.environ['ATLAS_EMAIL_FROM'],'to':[json.loads(first['payload'])['destination']],'subject':'[Atlas test] Delivery check' if first['opportunity_id']=='TEST' else 'Atlas · '+('Exceptional opportunities' if len(rows)>1 else json.loads(first['payload'])['title']),'text':'\n\n---\n\n'.join(parts)}
+        body={'from':providers.get('ATLAS_EMAIL_FROM'),'to':[json.loads(first['payload'])['destination']],'subject':'[Atlas test] Delivery check' if first['opportunity_id']=='TEST' else 'Atlas · '+('Exceptional opportunities' if len(rows)>1 else json.loads(first['payload'])['title']),'text':'\n\n---\n\n'.join(parts)}
         try:
-            response=requests.post('https://api.resend.com/emails',headers={'Authorization':'Bearer '+os.environ['RESEND_API_KEY'],'Idempotency-Key':key},json=body,timeout=25)
+            response=requests.post('https://api.resend.com/emails',headers={'Authorization':'Bearer '+providers.get('RESEND_API_KEY'),'Idempotency-Key':key},json=body,timeout=25)
             if response.status_code not in [200,201]:raise RuntimeError('Email provider HTTP '+str(response.status_code))
             provider_id=response.json()['id']
             with db.connect() as conn:

@@ -1,3 +1,4 @@
+from portal import providers
 import io,json,zipfile,shutil,secrets
 from flask import Blueprint,request,jsonify,render_template,session,send_file
 from portal import db,studio,uploads,jobs
@@ -15,7 +16,9 @@ def state():
         queue=[{**dict(r),'result':json.loads(r['result']),'project_id':jobs.project_id(json.loads(r['data']))} for r in c.execute('SELECT id,kind,status,created,result,data FROM jobs ORDER BY created DESC,rowid DESC LIMIT 100')]
     for p in projects:p['readiness']=studio.readiness(p)
     import os
-    return jsonify(projects=projects,uploads=imports,jobs=queue,heartbeat=db.get_meta('studio_heartbeat'),model_configured=bool(os.getenv('OPENAI_API_KEY')),model=os.getenv('STUDIO_MODEL','gpt-6-luna'),csrf=session.get('csrf'))
+    with db.connect() as c:
+        usage=c.execute('SELECT coalesce(sum(actual),0),coalesce(sum(CASE WHEN actual IS NULL THEN reserved ELSE 0 END),0) FROM model_usage WHERE month=?',(db.now()[:7],)).fetchone()
+    return jsonify(writing_usage={'actual_usd':usage[0],'reserved_usd':usage[1],'budget_usd':providers.budget()},provider_check=db.get_meta('writing_preflight'),projects=projects,uploads=imports,jobs=queue,heartbeat=db.get_meta('studio_heartbeat'),model_configured=bool(providers.get('OPENAI_API_KEY')),model=providers.get('STUDIO_MODEL','gpt-6-luna'),csrf=session.get('csrf'))
 @bp.post('/api/uploads')
 def upload():
     f=request.files.get('file')
@@ -143,3 +146,11 @@ def section_revision(identity):
         if not section:raise ValueError('Choose a saved letter section')
         return jsonify(job_id=jobs.enqueue('write',{'project_id':d['project_id'],'kind':'letter','template_id':d['metadata'].get('template_id'),'document_id':identity,'section':section})),202
     return jsonify(studio.revise_section(identity,data.get('section_id'),data.get('text')))
+
+@bp.post('/api/studio/provider-check')
+def provider_check():
+    import requests
+    try:result=providers.preflight()
+    except requests.RequestException:raise ValueError('Provider connection failed; existing drafts remain available')
+    result['checked_at']=db.now();db.set_meta('writing_preflight',result)
+    return jsonify(result)

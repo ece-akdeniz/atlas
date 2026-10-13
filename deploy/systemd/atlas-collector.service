@@ -20,7 +20,7 @@ ProtectHome=true
 PrivateTmp=true
 ReadWritePaths=/var/lib/atlas
 MemoryMax=2G
-TasksMax=64
+TasksMax=192
 
 [Install]
 WantedBy=multi-user.target

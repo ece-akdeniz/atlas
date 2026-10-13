@@ -1,0 +1,18 @@
+[Unit]
+Description=Atlas encrypted off-server backup
+After=network-online.target
+[Service]
+Type=oneshot
+User=atlas
+Group=atlas
+WorkingDirectory=/opt/atlas
+EnvironmentFile=/etc/atlas-backup.env
+Environment=PORTAL_DB=/var/lib/atlas/portal.sqlite3
+Environment=RESTIC_CACHE_DIR=/var/lib/atlas/restic-cache
+ExecStart=/bin/sh /opt/atlas/deploy/offsite-backup.sh
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/atlas
