@@ -119,7 +119,7 @@ def import_cv(upload):
         if key in changes:prov[key]={'source':'cv','upload_id':upload['id'],'parser':'local-cv-1.0','at':db.now()}
     meta=upload['metadata'];meta.update(changes=changes,review=review,extracted=fields)
     with db.connect() as c:
-        version=c.execute('INSERT INTO profile_versions(profile,changes,upload_id,created) VALUES(?,?,?,?)',(json.dumps(before),json.dumps({'before':before,'after':after,'changes':changes}),upload['id'],db.now())).lastrowid
+        version=c.execute('INSERT INTO profile_versions(profile,changes,upload_id,created) VALUES(?,?,?,?)',(json.dumps(before),json.dumps({'before':before,'after':after,'changes':changes,'previous_version':db.get_meta('active_cv_version')}),upload['id'],db.now())).lastrowid
         meta['version_id']=version;c.execute('UPDATE uploads SET metadata=? WHERE id=?',(json.dumps(meta),upload['id']))
     db.set_meta('profile',after);db.set_meta('active_cv_version',version);upload['metadata']=meta;return upload
 
@@ -128,6 +128,7 @@ def undo(version_id):
     if not r or r['undone']:raise ValueError('This import has already been undone or is unavailable')
     delta=json.loads(r['changes']);p=db.get_meta('profile');conflicts=[]
     for key in delta['changes']:
+        if key=='provenance':continue
         if p.get(key)==delta['after'].get(key):
             if key in delta['before']:p[key]=delta['before'][key]
             else:p.pop(key,None)
@@ -136,5 +137,42 @@ def undo(version_id):
         else:conflicts.append(key)
     if conflicts:raise ValueError('Newer edits preserved. Review these fields before undoing: '+', '.join(conflicts))
     db.set_meta('profile',p)
-    with db.connect() as c:c.execute('UPDATE profile_versions SET undone=1 WHERE id=?',(version_id,))
+    if db.get_meta('active_cv_version')==version_id:db.set_meta('active_cv_version',delta.get('previous_version'))
+    with db.connect() as c:
+        c.execute('UPDATE profile_versions SET undone=1 WHERE id=?',(version_id,))
+        row=c.execute('SELECT metadata FROM uploads WHERE id=?',(r['upload_id'],)).fetchone()
+        if row:
+            meta=json.loads(row[0]);meta['version_id']=delta.get('previous_version');meta['changes']={}
+            if 'pending_before' in delta:meta['review']=delta['pending_before']
+            c.execute('UPDATE uploads SET metadata=? WHERE id=?',(json.dumps(meta),r['upload_id']))
     return p
+
+
+def resolve(identity,decisions):
+    u=get(identity);pending=u['metadata'].get('review',[]);before=db.get_meta('profile',{});p=json.loads(json.dumps(before))
+    if not isinstance(decisions,list):raise ValueError('Invalid review decisions')
+    handled=set()
+    for decision in decisions:
+        i=decision.get('index');action=decision.get('action')
+        if type(i)!=int or not 0<=i<len(pending) or i in handled or action not in ['keep','add','replace']:raise ValueError('Invalid review decision')
+        handled.add(i);item=pending[i];key=item['field']
+        if action=='keep':continue
+        if key=='languages':
+            if p.get(key,{}).get(item['key'])!=item.get('current'):raise ValueError('Language changed since import; preserve the current value and upload again')
+            p.setdefault(key,{})[item['key']]=item['proposed']
+        elif key in ['education','experience','projects']:
+            current=p.setdefault(key,[])
+            if action=='replace':
+                old=decision.get('current')
+                if old not in current:raise ValueError('Entry changed since review; reopen the import result')
+                current[current.index(old)]=item['proposed']
+            elif item['proposed'] not in current:current.append(item['proposed'])
+        else:raise ValueError('Unsupported review field')
+        p.setdefault('provenance',{})[key]={'source':'reviewed CV','upload_id':identity,'at':db.now()}
+    changes={k:p.get(k) for k in set(before)|set(p) if p.get(k)!=before.get(k)}
+    delta={'before':before,'after':p,'changes':changes,'previous_version':db.get_meta('active_cv_version'),'pending_before':pending}
+    with db.connect() as c:
+        version=c.execute('INSERT INTO profile_versions(profile,changes,upload_id,created) VALUES(?,?,?,?)',(json.dumps(before),json.dumps(delta),identity,db.now())).lastrowid
+        u['metadata']['version_id']=version;u['metadata']['changes']=changes;u['metadata']['review']=[x for i,x in enumerate(pending) if i not in handled]
+        c.execute('UPDATE uploads SET metadata=? WHERE id=?',(json.dumps(u['metadata']),identity))
+    db.set_meta('profile',p);db.set_meta('active_cv_version',version);return u

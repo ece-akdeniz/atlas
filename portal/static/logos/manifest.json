@@ -99,5 +99,17 @@
     "evidence_url": "https://www.verity.net/careers",
     "identity": "verity",
     "downloaded": "2026-10-13"
+  },
+  "skydio.svg": {
+    "organization": "Skydio",
+    "source": "https://www.skydio.com/careers",
+    "asset": "Official inline svg.icon-logo",
+    "verified": "2026-10-13"
+  },
+  "robotum.svg": {
+    "organization": "roboTUM",
+    "source": "https://www.robotum.info/events",
+    "asset": "https://www.robotum.info/assets/robotum-logo-blue-white-CKaiFXFT.svg",
+    "verified": "2026-10-13T08:11:01+00:00"
   }
 }

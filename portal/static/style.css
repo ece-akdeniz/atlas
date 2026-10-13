@@ -31,3 +31,5 @@
 .refresh-run{margin:0 0 22px;font-size:13px;color:var(--muted)}.refresh-run p{margin:7px 0}
 @media(max-width:760px){.tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.tabs button{flex-direction:column;justify-content:center;text-align:center;white-space:normal;line-height:1.35;font-size:12px;padding:8px 5px;min-height:70px}.tabs .icon{flex-shrink:0}}
 @media(max-width:760px){.searchbar{flex-wrap:nowrap}.searchbar input{flex-basis:0}.cv-panel form{grid-template-columns:minmax(0,1fr)}.cv-panel form input{min-width:0;width:100%}.cv-panel form button{min-width:0}}
+
+.import-result{width:min(760px,calc(100vw - 24px));max-height:85dvh;padding:0;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:16px}.import-result .detail-body{overflow:auto;max-height:70dvh}.import-choice{border-top:1px solid var(--border);margin-top:20px;padding-top:12px}.import-choice p{max-width:65ch;overflow-wrap:anywhere}

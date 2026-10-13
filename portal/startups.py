@@ -19,6 +19,8 @@ SOURCES=[
  ('eth-agentic-systems','ETH Agentic Systems Lab','https://agenticsystems.ethz.ch/','agentic-route'),
  ('node','NODE Robotics','https://node-robotics-gmbh.jobs.personio.de/?language=en','personio-html'),
  ('skydio','Skydio','https://www.skydio.com/careers','skydio-html'),
+ ('embotech','Embotech','https://embotech.ai/career','embotech-pdf'),
+ ('verity','Verity','https://verity-ag.breezy.hr/','breezy-html'),
  ('verity-studios','Verity Studios','https://www.veritystudios.com/careers','verity-html'),
  ('807d62512a4a','FIUS · employer postings & PDFs','https://www.fius.de/en/aushang/','fius-pdf'),
 ]
@@ -37,16 +39,16 @@ def role(s,title,url,identity,body,city=None,country=None,requirements=None,empl
     if city in ['München']:city='Munich'
     r=base(title,url,s['name'],city,category);r['organization_id']=s['id'];r['publisher_id']=str(identity);r['employer']=s['name'];r['publisher']=s['name'];r['country']=country
     r['metro']='Munich' if city and re.search(r'Gilching|Garching|Oberpfaffenhofen|Munich',city,re.I) else 'Stuttgart' if city and re.search(r'Stuttgart|Metzingen|Schönaich|Weissach',city,re.I) else 'Zurich' if city and re.search(r'Zurich|Zürich|Dübendorf',city,re.I) else city
-    r['type']='Master’s thesis' if category=='research' else 'Working student' if re.search(r'working student|werkstudent',title,re.I) else 'Internship' if re.search(r'intern|praktik|trainee',title,re.I) else 'Full-time role' if re.search('full.?time',str(employment),re.I) else 'Role'
+    r['type']=title if category=='research' else 'Working student' if re.search(r'working student|werkstudent',title,re.I) else 'Internship' if re.search(r'intern|praktik|trainee',title,re.I) else 'Full-time role' if re.search('full.?time',str(employment),re.I) else 'Role'
     content=html.unescape(body or '');enrich(r,content,complete=True);plain=BeautifulSoup(content,'html.parser').get_text('\n',strip=True)
     # Section headings vary across ATSs; retain their actual local evidence.
     soup=BeautifulSoup(content,'html.parser')
     for heading in soup.find_all(['h1','h2','h3','h4','strong','b']):
-        label=clean(heading.text);field='required' if re.search(r'require|qualification|bring|your profile|who you are|what you have|looking for|background',label,re.I) else 'activities' if re.search(r'responsib|your role|you.ll do|you will|your mission|day to day mission|tasks|challenge',label,re.I) else None
+        label=clean(heading.text);field='required' if re.search(r'require|qualification|bring|your profile|who you are|what you have|looking for|background|good fit',label,re.I) else 'activities' if re.search(r'responsib|your role|you.ll do|you will|your mission|day to day mission|tasks|challenge|make an impact',label,re.I) else None
         if not field or len(label)>120:continue
         bits=[]
         for nxt in heading.find_all_next():
-            if nxt.name in ['h1','h2','h3','h4'] or nxt.name in ['strong','b'] and re.search(r'require|responsib|benefit|offer|bring',nxt.text,re.I):break
+            if nxt.name in ['h1','h2','h3','h4'] or nxt.name in ['strong','b'] and len(clean(nxt.text))<120:break
             if nxt.name=='li':bits.append(clean(nxt.text))
         if bits:evidence(r,field,list(dict.fromkeys(bits)), ' '.join(bits),label)
     if requirements:
@@ -70,13 +72,25 @@ def role(s,title,url,identity,body,city=None,country=None,requirements=None,empl
     if re.search(r'EU citizen|citizenship.*EU|EU.*citizenship',plain,re.I):r['nationality_restriction']='EU citizenship required';r['questions']=['Published EU citizenship restriction conflicts with Turkish citizenship; confirm before applying.'];r['explicit_conflict']='EU citizenship required'
     app=[x for x in sentences(plain) if re.search(r'send|upload|submit|attach|apply with|please include',x,re.I) and re.search(r'CV|resume|résumé|transcript|letter|project|portfolio|start date',x,re.I)]
     if app:evidence(r,'application_method',' '.join(app),' '.join(app),'Application instructions')
+    if employment:
+        r['employment_type_raw']=employment
+        evidence(r,'employment_type_raw',employment,str(employment),'Published employment type')
     if r['type']=='Full-time role':r['workload']='Full-time; weekly hours not stated';r.setdefault('questions',[]).append('Future option: confirm graduation and full-time availability.')
     return r
 
 def collect(s,raw):
     adapter=s['adapter'];records=[];seen=set();total=0
     if adapter in ['recruitee','workable','greenhouse','lever-feed']:
-        payload=json.loads(raw);rows=payload if isinstance(payload,list) else payload.get('offers',payload.get('jobs',[]));total=len(rows)
+        payload=json.loads(raw)
+        key='offers' if adapter=='recruitee' else 'jobs'
+        if adapter=='lever-feed':
+            if not isinstance(payload,list):raise ValueError('Expected complete public posting list')
+            rows=payload
+        else:
+            if not isinstance(payload,dict) or not isinstance(payload.get(key),list):raise ValueError('Feed schema incomplete; previous verification retained')
+            rows=payload[key]
+            if payload.get('next') or payload.get('next_page') or payload.get('has_more') or isinstance(payload.get('total'),int) and payload['total']>len(rows):raise ValueError('Feed pagination incomplete; previous records retained')
+        total=len(rows)
         for item in rows:
             title=item.get('title',item.get('text',''));identity=item.get('shortcode',item.get('id'));city=item.get('city') or item.get('location',{}).get('name') or item.get('categories',{}).get('location');country=item.get('country')
             if identity in seen or not relevant(title):continue
@@ -102,8 +116,29 @@ def collect(s,raw):
             url=s['url'].rstrip('/')+'/'+item['id'];p=appdata(document(url).decode())['posting']
             if p.get('isListed') is False:continue
             r=role(s,p['title'],url,p['id'],p['descriptionHtml'],p.get('locationName'),None,employment=p.get('employmentType'));r['application_url']=url+'/application';records.append(r)
+    elif adapter=='breezy-html':
+        soup=BeautifulSoup(raw,'html.parser');links={urljoin(s['url'],a['href'].split('?')[0]):clean(a.text) for a in reversed(soup.select('a[href]')) if '/p/' in a['href']};total=len(links)
+        if not links and '%HEADER_OUR_OPENINGS%' not in raw:raise ValueError('Public board index missing')
+        if total>40:raise ValueError('Public board exceeds 40 details; pagination review required')
+        for url,title in links.items():
+            if not relevant(title) and 'Spontaneous Application' not in title:continue
+            page=BeautifulSoup(document(url),'html.parser');job=None
+            for script in page.select('script[type="application/ld+json"]'):
+                try:
+                    value=json.loads(script.text)
+                    if value.get('@type')=='JobPosting':job=value
+                except (ValueError,AttributeError):continue
+            if not job and 'Spontaneous Application' in title:
+                r=base('Spontaneous application',url,s['name'],'Zurich','jobs','application_route');r.update(organization_id=s['id'],publisher_id=urlsplit(url).path.split('/p/')[1],publisher_identifiers={'breezy':urlsplit(url).path.split('/p/')[1]},status='unverified',extraction_complete=False,summary='Published speculative-application route; no particular vacancy is implied.',application_url=url+'/apply');records.append(r);continue
+            if not job:raise ValueError('Breezy role schema missing; previous collection retained')
+            loc=job.get('jobLocation',{});loc=loc[0] if isinstance(loc,list) else loc;address=loc.get('address',{})
+            ident=urlsplit(url).path.split('/p/')[1];r=role(s,job['title'],url,ident,job.get('description','').replace('\\n','\n'),address.get('addressLocality'),address.get('addressCountry'),employment=str(job.get('employmentType','')))
+            r['publisher_identifiers']={'breezy':ident};r['published']=job.get('datePosted');r['application_url']=url+'/apply';r['originating_page']='https://www.verity.net/careers'
+            if 'spontaneous' in r['title'].lower():r['record_kind']='application_route';r['status']='unverified';r['summary']='Published speculative-application route; no particular vacancy is implied.'
+            records.append(r)
     elif adapter=='verity-html':
         soup=BeautifulSoup(raw,'html.parser');cards=soup.select('.job[data-type]');total=len(cards)
+        if not cards:raise ValueError('Career index missing; cannot confirm no openings')
         if total>20:raise ValueError('Verity exceeds 20 detail pages; review required')
         for card in cards:
             a=card.select_one('a[href]');title=clean(card.select_one('h3').text)
@@ -113,7 +148,7 @@ def collect(s,raw):
             if not detail:raise ValueError('Verity role-specific content missing; previous records retained')
             r=role(s,title,url,identity,str(detail),None,None,employment=card['data-type'])
             apply=next((a['href'] for a in detail.select('a[href]') if 'breezy.hr/p/' in a['href']),None)
-            if apply:r['application_url']=apply
+            if apply:r['application_url']=apply;r['publisher_identifiers']={'breezy':urlsplit(apply).path.split('/p/')[-1].split('/')[0]}
             r['questions']=r.get('questions',[])+['Role-specific location not stated on the source section; confirm with the linked application portal.']
             if 'spontaneous' in title.lower():r['record_kind']='application_route';r['status']='unverified';r['summary']='Published speculative-application route. No particular vacancy or employer interest is implied.'
             records.append(r)
@@ -138,6 +173,7 @@ def collect(s,raw):
             u=urljoin(s['url'],a['href']);text=clean(a.parent.text if adapter=='skydio-html' else a.text)
             if len(text)>len(links.get(u,'')):links[u]=text
         candidates=[(u,t) for u,t in links.items() if relevant(t) and (adapter!='skydio-html' or re.search('Zurich|Zürich',t))];total=len(links)
+        if not total:raise ValueError('Opportunity index missing; cannot confirm an empty feed')
         if len(candidates)>35:raise ValueError('Coverage limit: more than 35 relevant details')
         for url,title in candidates:
             soup=BeautifulSoup(document(url),'html.parser');job=None
@@ -151,10 +187,39 @@ def collect(s,raw):
             else:
                 main=soup.select_one('main') or soup;h=main.find('h1')
                 if not h:raise ValueError('Detail title missing')
-                r=role(s,clean(h.text),url,urlsplit(url).path.rstrip('/').split('/')[-1],str(main),'Zurich' if adapter=='skydio-html' else None);r['extraction_complete']=False;r['verification_warning']='Application requirements extraction needs review'
+                if adapter=='skydio-html':
+                    header=h.find_next_sibling('p');published=clean(header.text) if header else ''
+                    loc=re.match(r'(.+?),\s*(.+?)\s*[-–]\s*(Full.time|Part.time|Internship)',published,re.I)
+                    body=main.select_one('.prose.block-content') or main
+                    r=role(s,clean(h.text),url,urlsplit(url).path.rstrip('/').split('/')[-1],str(body),loc[1] if loc else None,loc[2] if loc else None,employment=loc[3] if loc else None)
+                    if loc:evidence(r,'employment_type_raw',loc[3],published,'Role header');evidence(r,'city',loc[1],published,'Role header')
+                    r['application_url']=url
+                    if not r.get('required') or not r.get('activities'):r['extraction_complete']=False;r['verification_warning']='Role detail sections incomplete; check the source'
+                else:
+                    r=role(s,clean(h.text),url,urlsplit(url).path.rstrip('/').split('/')[-1],str(main),None);r['extraction_complete']=False;r['verification_warning']='Application requirements extraction needs review'
+            records.append(r)
+    elif adapter=='embotech-pdf':
+        soup=BeautifulSoup(raw,'html.parser');cards=[a for a in soup.select('a[href]') if '.pdf' in a['href'] and a.find('h3')];total=len(cards)
+        if not cards:raise ValueError('Embotech role index missing; cannot confirm an empty feed')
+        for card in cards:
+            title=clean(card.find('h3').text)
+            if not relevant(title):continue
+            url=urljoin(s['url'],card['href']);location=card.select_one('.location-open-positions-wrapper');city=clean(location.text) if location else None
+            r=role(s,title,url,url,'',city,'Switzerland' if city=='Zurich' else None)
+            r['originating_page']=s['url'];r['application_url']=s['url'];r['application_method']='Apply by email to careers@embotech.com, as published on the careers index.'
+            evidence(r,'application_method',r['application_method'],'We look forward to receiving your application by email: careers@embotech.com','Careers index',s['url'])
+            info=clean(card.text);r['summary']=title+'; '+info.split('Workload')[-1].strip() if 'Workload' in info else title
+            if '100%' in info:evidence(r,'workload','Full-time (100%); weekly hours not stated',info,'Role index',s['url']);r['employment_type_raw']='Full-time (100%)'
+            try:
+                raw_pdf=document(url);pdf=PdfReader(io.BytesIO(raw_pdf));pages=[x.extract_text() or '' for x in pdf.pages]
+                enrich(r,pdf_details('\n'.join(pages)),complete=True);r['documents']=[{'url':url,'originating_page':s['url'],'pages':len(pages),'status':'Extracted'}]
+                if r.get('activities'):r['summary']=r['activities'][0][:360]
+            except Exception as e:
+                r['extraction_complete']=False;r['field_states']={k:{'state':'incomplete'} for k in ['required','activities','materials']};r['documents']=[{'url':url,'originating_page':s['url'],'status':'Failed','error':str(e)[:300]}];r['verification_warning']='Role is listed on the official index; linked PDF details could not be collected.'
             records.append(r)
     elif adapter=='fius-pdf':
         soup=BeautifulSoup(raw,'html.parser');cards=soup.select('a.proj-card[data-category]');total=len(cards)
+        if not cards:raise ValueError('PDF index missing; cannot confirm no postings')
         for card in cards:
             title=clean(card.select_one('h3').text)
             if not relevant(title):continue
@@ -176,11 +241,19 @@ def collect(s,raw):
     return records,f'{len(records)} relevant validated records from {total} published entries; official publisher IDs; no title-only quota. All index entries inspected; eligible detail pages followed.'
 
 def upgrade():
-    if db.get_meta('startup_registry')=='3':return
+    if db.get_meta('startup_registry')=='4':return
     with db.connect() as c:
         for identity,name,url,adapter in SOURCES:
             data={'name':name,'url':url,'adapter':adapter,'category':'research' if identity=='807d62512a4a' else 'jobs','enabled':True,'interval_hours':24,'status':'Pending first collection','organization_id':identity,'coverage':'Official feed or bounded index-to-detail collector; excludes senior and unrelated roles.','operational':False}
-            c.execute('INSERT INTO sources(id,data) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data,next_due=NULL',(identity,json.dumps(data)))
+            old=c.execute('SELECT data FROM sources WHERE id=?',(identity,)).fetchone()
+            if old:
+                existing=json.loads(old[0])
+                if existing.get('adapter')==adapter and existing.get('url')==url:
+                    existing.setdefault('organization_id',identity);data=existing
+                else:
+                    data={**existing,**{k:data[k] for k in ['name','url','adapter','enabled','status','organization_id','operational']}}
+                    c.execute('UPDATE sources SET next_due=NULL WHERE id=?',(identity,))
+            c.execute('INSERT INTO sources(id,data) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',(identity,json.dumps(data)))
         aliases={'a4c63ea3bfa3':('tum-cvg','Covered by TUM CVG project collector; homepage retained as source history.'),'daedalean':('destinus','Shared official Destinus board; Daedalean affiliation retained when named in the posting.')}
         for identity,(target,note) in aliases.items():
             old=c.execute('SELECT data FROM sources WHERE id=?',(identity,)).fetchone();d=json.loads(old[0]) if old else {'name':'Daedalean','url':'https://daedalean.ai/careers','category':'jobs','interval_hours':24}
@@ -193,4 +266,14 @@ def upgrade():
             d={'name':item.get('name',identity),'url':url,'adapter':'pending','enabled':False,'category':'research' if identity=='eth-agentic-systems' else 'jobs','interval_hours':24,'status':'Link only','coverage':note,'operational':False}
             if identity=='aionic-labs':d['coverage']='Assumed identity for Aionics Lab: Aionic Labs, ETH-linked. '+note
             c.execute('INSERT INTO sources(id,data) VALUES(?,?) ON CONFLICT(id) DO NOTHING',(identity,json.dumps(d)))
-    db.set_meta('startup_registry','3')
+    # Preserve existing Verity record IDs when linking the shared official board.
+    import hashlib
+    with db.connect() as c:
+        for row in c.execute('SELECT id,data FROM opportunities').fetchall():
+            record=json.loads(row['data']);url=record.get('application_url') or record.get('url','')
+            if 'verity-ag.breezy.hr/p/' not in url:continue
+            identity=urlsplit(url).path.strip('/').split('/')[1]
+            record.setdefault('publisher_identifiers',{})['breezy']=identity
+            body=json.dumps(record,sort_keys=True,ensure_ascii=False)
+            c.execute('UPDATE opportunities SET data=?,hash=? WHERE id=?',(body,hashlib.sha256(body.encode()).hexdigest(),row['id']))
+    db.set_meta('startup_registry','4')

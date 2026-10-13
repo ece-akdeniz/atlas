@@ -33,7 +33,7 @@ def dlr(html,s):
         main=detail.select_one('main') or detail;title=clean(h.get_text(' ',strip=True));body=main.get_text('\n',strip=True)
         category='jobs' if re.search('working student|werkstudent',title,re.I) else 'research'
         r=base(title,url,'DLR · Robotics and Mechatronics','Oberpfaffenhofen',category)
-        r['type']='Working student' if category=='jobs' else 'Master’s thesis';r['employer']='DLR';r['publisher_id']=urlsplit(url).path.rstrip('/').split('/')[-1]
+        r['type']=title;r['employer']='DLR';r['publisher_id']=urlsplit(url).path.rstrip('/').split('/')[-1]
         enrich(r,str(main),complete=True);r['tags']=tags(title+' '+body)
         # DLR pages use natural-language section headings; collect each heading's own siblings.
         for heading in main.find_all(['h2','h3','h4']):
@@ -149,7 +149,8 @@ def sirop(html,s):
     soup=BeautifulSoup(html,'html.parser');feeds=list(dict.fromkeys(el.get('data-feed') for el in soup.select('[data-feed]') if el.get('data-feed','').startswith('https://feeds.sirop.org/')))
     if not feeds:raise ValueError('No public publisher feed found; protected SIROP app is not collected')
     records=[];seen=set();restricted=0
-    for feed in feeds[:5]:
+    if len(feeds)>5:raise ValueError('More than five public feeds; source coverage incomplete')
+    for feed in feeds:
         payload=json.loads(document(feed))
         for item in payload.get('opportunities',[]):
             url=item.get('url','');identity=url.rstrip('/').split('/')[-1]

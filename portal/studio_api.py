@@ -12,7 +12,8 @@ def state():
     with db.connect() as c:
         projects=[{**json.loads(r['data']),'id':r['id'],'updated':r['updated']} for r in c.execute('SELECT * FROM studio_projects ORDER BY updated DESC')]
         imports=[{**dict(r),'metadata':json.loads(r['metadata'])} for r in c.execute('SELECT * FROM uploads ORDER BY created DESC')]
-        queue=[{**dict(r),'result':json.loads(r['result'])} for r in c.execute('SELECT id,kind,status,created,result FROM jobs ORDER BY created DESC LIMIT 20')]
+        queue=[{**dict(r),'result':json.loads(r['result']),'project_id':jobs.project_id(json.loads(r['data']))} for r in c.execute('SELECT id,kind,status,created,result,data FROM jobs ORDER BY created DESC,rowid DESC LIMIT 100')]
+    for p in projects:p['readiness']=studio.readiness(p)
     import os
     return jsonify(projects=projects,uploads=imports,jobs=queue,heartbeat=db.get_meta('studio_heartbeat'),model_configured=bool(os.getenv('OPENAI_API_KEY')),model=os.getenv('STUDIO_MODEL','gpt-6-luna'),csrf=session.get('csrf'))
 @bp.post('/api/uploads')
@@ -24,19 +25,7 @@ def upload():
     return jsonify(u)
 @bp.post('/api/uploads/<identity>/review')
 def review(identity):
-    u=uploads.get(identity);selection=(request.get_json() or {}).get('indices',[]);p=db.get_meta('profile');before=json.loads(json.dumps(p));pending=u['metadata'].get('review',[])
-    if not isinstance(selection,list) or any(type(i)!=int or i<0 or i>=len(pending) for i in selection):raise ValueError('Invalid selection')
-    for i in selection:
-        item=pending[i];key=item['field']
-        if key=='languages':p.setdefault(key,{})[item['key']]=item['proposed']
-        elif item['proposed'] not in p.setdefault(key,[]):p[key].append(item['proposed'])
-        p.setdefault('provenance',{})[key]={'source':'reviewed CV','upload_id':identity,'at':db.now()}
-    u['metadata']['review']=[v for i,v in enumerate(pending) if i not in selection]
-    changes={k:p[k] for k in p if p[k]!=before.get(k)}
-    with db.connect() as c:
-        version=c.execute('INSERT INTO profile_versions(profile,changes,upload_id,created) VALUES(?,?,?,?)',(json.dumps(before),json.dumps({'before':before,'after':p,'changes':changes}),identity,db.now())).lastrowid
-        u['metadata']['version_id']=version;c.execute('UPDATE uploads SET metadata=? WHERE id=?',(json.dumps(u['metadata']),identity))
-    db.set_meta('profile',p);return jsonify(ok=True)
+    return jsonify(uploads.resolve(identity,(request.get_json() or {}).get('decisions',[])))
 @bp.post('/api/imports/<int:identity>/undo')
 def undo(identity):return jsonify(profile=uploads.undo(identity))
 @bp.delete('/api/uploads/<identity>')
@@ -61,6 +50,7 @@ def project(identity):
         for key in ['settings','progress','templates']:
             if key in payload and not isinstance(payload[key],dict):raise ValueError('Invalid '+key)
         if 'notes' in payload and (not isinstance(payload['notes'],str) or len(payload['notes'])>10000):raise ValueError('Invalid notes')
+        if payload.get('status')=='Ready' and not studio.readiness(p)['ready']:raise ValueError('Complete required checklist items and review compiled documents first')
         if 'status' in payload and payload['status'] not in ['Preparing','Ready','Applied','Archived']:raise ValueError('Invalid status')
         if 'settings' in payload:
             setting=payload['settings']
@@ -78,7 +68,7 @@ def project(identity):
             if key in payload:p[key]=payload[key]
         if len(json.dumps(p))>200000:raise ValueError('Project exceeds storage limit')
         studio.save_project(p)
-    return jsonify(project=p,documents=studio.documents(identity))
+    return jsonify(project={**p,'readiness':studio.readiness(p)},documents=studio.documents(p['id']))
 @bp.post('/api/studio/projects/<identity>/draft')
 def draft(identity):
     p=studio.project(identity);d=request.get_json() or {};kind=d.get('kind','letter');template=d.get('template_id')
@@ -89,7 +79,9 @@ def draft(identity):
     return jsonify(studio.local_draft(p,kind,template))
 @bp.post('/api/studio/documents/<identity>')
 def edit(identity):
-    d=studio.document(identity);payload=request.get_json() or {};meta={**d['metadata'],'parent_id':identity};meta.pop('compilation',None);meta.pop('visual_reviewed',None);meta['before']=d['source'];meta['diff']=studio.diff_versions(d['source'],payload.get('source',''))
+    d=studio.document(identity);payload=request.get_json() or {}
+    if not isinstance(payload.get('source'),str):raise ValueError('LaTeX source must be text')
+    meta={**d['metadata'],'parent_id':identity};meta.pop('compilation',None);meta.pop('visual_reviewed',None);meta['before']=d['source'];meta['diff']=studio.diff_versions(d['source'],payload.get('source',''))
     return jsonify(studio.new_document(d['project_id'],d['kind'],payload.get('source'),meta))
 @bp.post('/api/studio/documents/<identity>/compile')
 def compile_doc(identity):studio.document(identity);return jsonify(job_id=jobs.enqueue('compile',{'document_id':identity})),202
@@ -137,3 +129,17 @@ def notification_settings():
 def test_email():
     from portal.notifications import queue_test
     return jsonify(id=queue_test(),message='Test email queued; provider acceptance is not inbox delivery'),202
+
+@bp.post('/api/studio/documents/<identity>/suggestions')
+def suggestions(identity):
+    data=request.get_json() or {}
+    return jsonify(studio.decide_edits(identity,data.get('decisions',{}),data.get('apply') is True))
+@bp.post('/api/studio/documents/<identity>/section')
+def section_revision(identity):
+    d=studio.document(identity);data=request.get_json() or {}
+    if data.get('model'):
+        if data.get('consent') is not True:raise ValueError('Confirm external processing')
+        section=next((s for s in studio.letter_sections(d['source']) if s['id']==str(data.get('section_id'))),None)
+        if not section:raise ValueError('Choose a saved letter section')
+        return jsonify(job_id=jobs.enqueue('write',{'project_id':d['project_id'],'kind':'letter','template_id':d['metadata'].get('template_id'),'document_id':identity,'section':section})),202
+    return jsonify(studio.revise_section(identity,data.get('section_id'),data.get('text')))

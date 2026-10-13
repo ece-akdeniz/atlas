@@ -86,7 +86,9 @@ def create_app(test=False):
         from portal.checklist import for_record
         for r in data:r['application_checklist']=for_record(r)
         ordered=ranked(data,p,as_of)
-        return jsonify(refresh=refresh_info,profile=p,recommendations=[r['id'] for r in recommendations(ordered)],opportunities=ordered,sources=src,runs=runs,csrf=session['csrf'],saved_searches=db.get_meta('saved_searches',[]),worker_heartbeat=db.get_meta('worker_heartbeat'),as_of=as_of,local=not production,ranking_version=RANK_VERSION)
+        from portal.taxonomy import normalize,TYPE_OPTIONS,VERSION as TYPE_VERSION
+        aliases={raw:normalize({'type':raw})['types'] for raw in {r.get('original_type','') for r in data}|{x.get('filters',{}).get('type','') for x in db.get_meta('saved_searches',[])}|{'Master Thesis','Master’s thesis','Master thesis','Internship','Student project / thesis'}}
+        return jsonify(type_aliases=aliases,type_options=TYPE_OPTIONS,taxonomy_version=TYPE_VERSION,refresh=refresh_info,profile=p,recommendations=[r['id'] for r in recommendations(ordered)],opportunities=ordered,sources=src,runs=runs,csrf=session['csrf'],saved_searches=db.get_meta('saved_searches',[]),worker_heartbeat=db.get_meta('worker_heartbeat'),as_of=as_of,local=not production,ranking_version=RANK_VERSION)
     @app.get('/api/opportunities/<identity>/history')
     def history(identity):
         with db.connect() as c: records=[{'at':r['at'],'fields':json.loads(r['fields'])} for r in c.execute('SELECT * FROM changes WHERE opportunity_id=? ORDER BY id DESC LIMIT 30',(identity,))]
@@ -113,7 +115,7 @@ def create_app(test=False):
             if k in d:
                 if d[k] is not None and type(d[k])!=bool: return jsonify(error='Invalid '+k),400
                 p[k]=d[k]
-        for k in ['skills','locations','interests','projects','education']:
+        for k in ['skills','locations','interests','projects','experience','education']:
             if k in d:
                 if not isinstance(d[k],list) or len(d[k])>100 or any(not isinstance(v,str) or len(v)>1500 for v in d[k]): return jsonify(error='Invalid '+k),400
                 p[k]=d[k]

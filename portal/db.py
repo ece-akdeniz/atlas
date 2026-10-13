@@ -41,6 +41,30 @@ def init():
             c.execute('UPDATE workflow SET bookmarked=1 WHERE stage IS NOT NULL')
         c.execute("INSERT INTO meta VALUES('schema_version','2') ON CONFLICT(key) DO UPDATE SET value='2'")
 
+    migrate_taxonomy()
+
+def migrate_taxonomy():
+    # Representation-only migration: preserve discovery, verification and workflow.
+    from portal.taxonomy import normalize, VERSION
+    with connect() as c:
+        for row in c.execute('SELECT id,data FROM opportunities').fetchall():
+            old=json.loads(row['data']); current=normalize(old)
+            if old==current: continue
+            body=json.dumps(current,sort_keys=True,ensure_ascii=False)
+            c.execute('UPDATE opportunities SET data=?,hash=? WHERE id=?',(body,hashlib.sha256(body.encode()).hexdigest(),row['id']))
+        searches=c.execute("SELECT value FROM meta WHERE key='saved_searches'").fetchone()
+        if searches:
+            items=json.loads(searches[0]);changed=False
+            for item in items:
+                filters=item.get('filters',{});value=filters.get('type','')
+                if value.lower() in ['full-time','full-time role','part-time','part-time role']:
+                    filters['workload']='Part-time' if value.lower().startswith('part') else 'Full-time';filters.pop('type');changed=True
+                elif value:
+                    labels=normalize({'type':value})['types']
+                    if len(labels)==1 and labels[0]!='Unspecified' and value!=labels[0]:filters['type']=labels[0];changed=True
+            if changed:c.execute("UPDATE meta SET value=? WHERE key='saved_searches'",(json.dumps(items,ensure_ascii=False),))
+        c.execute("INSERT INTO meta VALUES('taxonomy_version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(json.dumps(VERSION),))
+
 def get_meta(key, default=None):
     with connect() as c: row=c.execute('SELECT value FROM meta WHERE key=?',(key,)).fetchone()
     return json.loads(row['value']) if row else default
@@ -49,10 +73,11 @@ def set_meta(key,value):
     with connect() as c: c.execute('INSERT INTO meta VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',(key,json.dumps(value,ensure_ascii=False)))
 
 def rows():
+    from portal.taxonomy import normalize
     with connect() as c:
         values=c.execute('SELECT o.*,w.stage,w.notes,w.dismissed,w.bookmarked FROM opportunities o LEFT JOIN workflow w ON o.id=w.opportunity_id').fetchall()
         evidence=c.execute('SELECT * FROM evidence').fetchall()
-    return [{**json.loads(r['data']),'id':r['id'],'discovered':r['discovered'],'verified':r['verified'],'changed':r['changed'],'stage':r['stage'],'notes':r['notes'] or '', 'bookmarked':bool(r['bookmarked']), 'dismissed':bool(r['dismissed']), 'sources':[dict(e) for e in evidence if e['opportunity_id']==r['id']]} for r in values]
+    return [{**normalize(json.loads(r['data'])),'id':r['id'],'discovered':r['discovered'],'verified':r['verified'],'changed':r['changed'],'stage':r['stage'],'notes':r['notes'] or '', 'bookmarked':bool(r['bookmarked']), 'dismissed':bool(r['dismissed']), 'sources':[dict(e) for e in evidence if e['opportunity_id']==r['id']]} for r in values]
 
 def sources():
     with connect() as c: values=c.execute('SELECT * FROM sources ORDER BY id').fetchall()
@@ -61,7 +86,8 @@ def sources():
 def upsert(record, source_id, verified=None):
     from portal.model import validate, canonical_url
     validate(record)
-    record=dict(record)
+    from portal.taxonomy import normalize
+    record=normalize(record)
     record.setdefault('field_evidence',{k:{'url':record['url'],'method':record.get('evidence_method','Source extraction'),'version':record.get('extraction_version','unknown')} for k,v in record.items() if v is not None and k not in ['field_evidence','questions','extraction_scope']})
     verified=verified or now()
     changed_at=now()
@@ -75,10 +101,11 @@ def upsert(record, source_id, verified=None):
         c.execute('BEGIN IMMEDIATE')
         previous=c.execute('SELECT * FROM opportunities WHERE canonical=?',(key,)).fetchone()
         # Publisher-issued cross-platform identity, never fuzzy title similarity.
-        if not previous and record.get('publisher_identifiers',{}).get('sirop'):
-            external_id=record['publisher_identifiers']['sirop']
+        if not previous and record.get('publisher_identifiers'):
+            identifiers=record['publisher_identifiers']
             for candidate in c.execute('SELECT * FROM opportunities').fetchall():
-                if json.loads(candidate['data']).get('publisher_identifiers',{}).get('sirop')==external_id:
+                known=json.loads(candidate['data']).get('publisher_identifiers',{})
+                if any(value and known.get(kind)==value for kind,value in identifiers.items() if kind in ['sirop','breezy']):
                     previous=candidate;break
         if previous:
             old_record=json.loads(previous['data'])

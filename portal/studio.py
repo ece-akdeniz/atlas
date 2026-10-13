@@ -51,9 +51,11 @@ def create(payload):
 def document(identity):
     with db.connect() as c:r=c.execute('SELECT * FROM studio_documents WHERE id=?',(identity,)).fetchone()
     if not r:raise ValueError('Document not found')
-    return {**dict(r),'metadata':json.loads(r['metadata'])}
+    d={**dict(r),'metadata':json.loads(r['metadata'])}
+    if d['kind']=='letter':d['sections']=letter_sections(d['source'])
+    return d
 def documents(pid):
-    with db.connect() as c:return [{**dict(r),'metadata':json.loads(r['metadata'])} for r in c.execute('SELECT * FROM studio_documents WHERE project_id=? ORDER BY created DESC,rowid DESC',(pid,))]
+    with db.connect() as c:return [document(r['id']) for r in c.execute('SELECT id FROM studio_documents WHERE project_id=? ORDER BY created DESC,rowid DESC',(pid,))]
 def new_document(pid,kind,source,metadata=None):
     project(pid)
     if kind not in ['letter','resume'] or not isinstance(source,str) or len(source)>250000:raise ValueError('Invalid document')
@@ -113,3 +115,70 @@ def populate_letter(source,body):
         return re.sub(r'(?m)^```.*$','',source)
     raise ValueError('Add [[LETTER_BODY]] or ATLAS body markers to a copy of this template to identify the editable letter body; its layout will be preserved')
 def diff_versions(before,after):return '\n'.join(difflib.unified_diff(before.splitlines(),after.splitlines(),fromfile='Previous / master',tofile='Draft',lineterm=''))
+
+
+def letter_sections(source):
+    marker=re.search(r'% ATLAS:BEGIN body\s*([\s\S]*?)% ATLAS:END body',source)
+    if marker:start,end=marker.start(1),marker.end(1)
+    else:
+        opening=re.search(r'\\opening\{[^}]*\}',source)
+        closing=re.search(r'\\(?:closing|end\{letter\})',source)
+        if not opening or not closing:return []
+        start,end=opening.end(),closing.start()
+    return [{'id':str(i),'source':m[0],'text':untex(m[0]),'start':start+m.start(),'end':start+m.end()} for i,m in enumerate(re.finditer(r'\S[^\n]*(?:\n(?!\s*\n)[^\n]+)*',source[start:end]))]
+
+def derived_metadata(d):
+    meta={**d['metadata'],'parent_id':d['id'],'before':d['source'],'review_required':True}
+    for key in ['compilation','visual_reviewed']:meta.pop(key,None)
+    return meta
+
+def revise_section(identity,section_id,text):
+    d=document(identity)
+    if d['kind']!='letter' or not isinstance(text,str) or not text.strip() or len(text)>12000:raise ValueError('Enter a letter section of at most 12,000 characters')
+    section=next((s for s in letter_sections(d['source']) if s['id']==str(section_id)),None)
+    if not section:raise ValueError('Section not found in this saved version')
+    source=d['source'][:section['start']]+tex(text)+d['source'][section['end']:]
+    meta=derived_metadata(d);meta.update(diff=diff_versions(d['source'],source),revision_section=str(section_id),method='user-section-revision')
+    return new_document(d['project_id'],'letter',source,meta)
+
+def decide_edits(identity,decisions,apply=False):
+    d=document(identity);edits=d['metadata'].get('generation',{}).get('edits',[])
+    if d['kind']!='resume' or not isinstance(decisions,dict):raise ValueError('Résumé suggestions required')
+    if any(not str(k).isdigit() or not 0<=int(k)<len(edits) or v not in ['accepted','rejected','pending'] for k,v in decisions.items()):raise ValueError('Invalid edit decision')
+    saved={**d['metadata'].get('edit_decisions',{}),**decisions};d['metadata']['edit_decisions']=saved
+    if not apply:
+        with db.connect() as c:c.execute('UPDATE studio_documents SET metadata=? WHERE id=?',(json.dumps(d['metadata']),identity))
+        return document(identity)
+    selected=[(i,e) for i,e in enumerate(edits) if saved.get(str(i))=='accepted']
+    if not selected:raise ValueError('Accept at least one suggestion')
+    spans=[]
+    for i,e in selected:
+        original=e.get('original');replacement=e.get('replacement')
+        if not original or not isinstance(replacement,str) or d['source'].count(original)!=1:raise ValueError('Suggested text must match exactly once; edit the source manually if ambiguous')
+        if not e.get('evidence_ids'):raise ValueError('Suggestion lacks profile evidence; keep it for manual review')
+        # Models provide prose only. Never replace or introduce template commands.
+        if re.search(r'\\[a-zA-Z]+|[{}]',original):raise ValueError('Suggestion touches LaTeX layout; use the source editor instead')
+        start=d['source'].index(original);end=start+len(original)
+        if any(start<b and end>a for a,b,_ in spans):raise ValueError('Selected suggestions overlap; apply them separately')
+        spans.append((start,end,tex(replacement)))
+    source=d['source']
+    for start,end,replacement in sorted(spans,reverse=True):source=source[:start]+replacement+source[end:]
+    meta=derived_metadata(d);meta.update(edit_decisions=saved,applied_edits=[i for i,_ in selected],diff=diff_versions(d['source'],source))
+    return new_document(d['project_id'],'resume',source,meta)
+
+def readiness(p):
+    latest={}
+    for d in documents(p['id']):latest.setdefault(d['kind'],d)
+    required=[c for c in p['checklist'] if c['requirement']!='optional']
+    missing=[c['label'] for c in required if not p.get('progress',{}).get(c['id'])]
+    kinds={'resume' if c['label']=='CV / résumé' else 'letter' for c in required if c['label'] in ['CV / résumé','Cover / motivation letter']}
+    kinds|=set(latest)
+    pending=[k for k in kinds if k not in latest or latest[k]['metadata'].get('compilation',{}).get('status')!='compiled' or latest[k]['metadata'].get('compilation',{}).get('warnings') or not latest[k]['metadata'].get('visual_reviewed')]
+    ready=bool(latest) and not missing and not pending
+    return {'ready':ready,'missing_checklist':missing,'documents_to_review':pending,'label':'Ready for your final check' if ready else 'Preparing'}
+
+
+def untex(value):
+    replacements={r'\textbackslash{}':'\\',r'\&':'&',r'\%':'%',r'\$':'$',r'\#':'#',r'\_':'_',r'\{':'{',r'\}':'}',r'\textasciitilde{}':'~',r'\textasciicircum{}':'^'}
+    for key,text in replacements.items():value=value.replace(key,text)
+    return value

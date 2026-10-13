@@ -1,3 +1,49 @@
+# Current validation — 2026-10-13T09:06:40+00:00
+
+This section supersedes the dated snapshots below. Nothing is production-tested. Destructive/workflow tests used `/tmp/atlas-completion-qa/portal.sqlite3` or temporary test databases, not personal data. A complete private backup was taken before changes. Personal workflow (3 rows), uploads (5), Studio projects (1), and document versions (1) were preserved at the 08:58 UTC check; fixture projects and edits exist only in isolation. A subsequent backup comparison confirmed workflow, uploads, projects and documents were byte-identical at the row level; the only changed profile key was `last_visit`, updated by normal browsing.
+
+## Automated behavior
+
+68 isolated tests passed (`.venv/bin/python -m unittest discover -s tests -q`). JavaScript syntax checks passed. New checks cover delayed first-alert qualification; closed queued-alert cancellation before network delivery; free technical events without job-style skills; complete empty versus incomplete/truncated feeds; preservation of old verification; CV conflict replacement/Undo and manual preferences; accepted résumé edits as immutable versions; single-section letter edits and project-specific job IDs; document/checklist readiness; and controlled type migration without touching workflow/verification.
+
+Taxonomy `types-1.1` stores `original_type`, a controlled `types` array, and separate `employment_arrangements`. Equivalent apostrophe/case variants normalize consistently. Explicit multi-type listings match each supported filter once. Ambiguous student project/thesis remains degree-unspecified; absent types remain Unspecified. RPG now reads its actual Thesis Type section, recovering the explicitly published bachelor's option for Time-continuous Facial Motion Capture. DLR/startup parsers no longer default every thesis to a master's degree. Database startup migrates representations without changing discovery, verification, notes, bookmarks, or application history. Future upserts use the same normalization. Workload uses published employment metadata, not a title guess.
+
+## Browser and document evidence
+
+- Research filter: Embodied, Agentic AI returned the same single ID under Master's thesis, Semester project, and Internship. Details preserved “Semester Project / Internship / Master Thesis”. Category-specific dropdowns contain controlled labels, never full-time/part-time.
+- Skydio Autonomy Engineer - Deep Learning: Cards show Professional role plus source-confirmed Full-time; List shows Full-time with weekly hours not stated. The summary describes designing/deploying computer-vision and multimodal models, with the official Skydio logo. Full-time availability remains a visible concern.
+- Isolated CV upload: transient result dialog resolved education, experience, projects and German language conflicts; the update persisted in Profile; Undo restored the prior facts and retained workload/location preferences. Upload remains at the bottom, and the removed permanent history section is absent.
+- Atlas opportunity → Prepare application → separate Studio → actual compilation-copy template → editable letter → one-paragraph revision → worker compilation → PDF preview passed. Unrelated paragraphs remained intact. PDF, .tex and complete source-bundle downloads succeeded through their actual controls.
+- Résumé accept/reject/apply was exercised with a clearly labeled isolated suggestion fixture (no model call). Applying the accepted equivalent-wording change created a new version and retained the master/previous source. The resulting résumé compiled to one page; its rendered PDF was inspected with intact headings, entries, readable text and no visible overflow. Automated tests also verify immutable edits and readiness.
+- Production authentication/download protection, job persistence/dedupe, profile persistence, ranking stability and previous responsive checks remain covered by the existing isolated suite/history. Browser viewport emulation is not proof of access from physical phone/iPad or remote synchronization.
+
+Current responsive recheck: 390×844 light/dark Atlas and Studio had no horizontal page overflow. Browse's first List result began at 434 px with all three category labels visible. At 820×1180, Profile/Calendar used the available workspace and two selections created exactly two opportunity columns in Compare (plus the field-label column). At 1440×1000, Profile occupied 1150 px in two readable 566 px sections, exceeding the old 950 px cap. Its final section was CV Upload; permanent import history was absent. Local screenshot evidence is retained under ignored `docs/screenshots/completion/`.
+
+Real macOS sandbox checks rerun successfully: ordinary compilation, denied private-file read, and denied TeX shell execution. No claim of Linux production isolation follows from that result.
+
+## Current collection snapshot
+
+183 stored records from 52 registered sources; 166 non-expired/non-closed stored records; 27 operational collectors. Stored categories: {'jobs': 98, 'research': 66, 'events': 19}. These include future full-time options, undated routes, uncertain records and historical events; they are not all suitable current openings. Shared Verity boards deduplicate by publisher identity.
+
+Checked / uncertain visible records using the actual city/metro coverage rule:
+- Stuttgart: jobs 4 checked / 4 uncertain; research 7 checked / 7 uncertain; events 1 checked / 0 uncertain.
+- Munich: jobs 13 checked / 1 uncertain; research 8 checked / 1 uncertain; events 1 checked / 0 uncertain.
+- Zurich: jobs 25 checked / 6 uncertain; research 39 checked / 4 uncertain; events 0 checked / 0 uncertain.
+
+Every registered source, current timestamps, limitations and next actions are in [SOURCE-AUDIT-2026-10-13.md](SOURCE-AUDIT-2026-10-13.md). BMW's robots connection timed out and Bosch returned HTTP 410; neither has a successful collection timestamp. DLR RM and hackaTUM recovered during this pass. The full manual cycle checked 29 sources, followed by targeted reprocessing; this is not scheduler evidence.
+
+Newly operational: Embotech (5 relevant index-confirmed roles, linked PDF details blocked by 403) and main Verity (2 records shared/deduplicated with Verity Studios, including one speculative route). Aionic Labs has one manually source-checked research/engineering internship, explicitly incomplete; automatic collection remains unfinished. ETH confirms Aionic Labs' origin, but its identity as the user's intended “Aionics Lab” remains an explicit assumption. roboTUM's official upcoming-events view returned no events; its 2025/June-2026 hackathons are historical. General SIROP is access-limited; lab-supported public feeds remain operational.
+
+Real repeat collection in a separate database at 08:30 UTC: Skydio 9, Embotech 5, Verity 2; each added 0 and changed 0 payloads. This establishes idempotence for those unchanged official inputs, not reliability for every website. Complete-feed absence marks a record unverified without falsely renewing its verification or declaring closure. Parser errors/truncation preserve prior records; access restrictions remain enforced.
+
+## Unverified and blocked
+
+No paid model call or email was sent. Provider acceptance and Gmail receipt are both unverified. Linux TeX isolation, live HTTPS/authentication, physical-device synchronization, scheduler operation with the laptop disconnected, remote service restart and encrypted off-server restore remain production gates. Dynamic Aionic/roboTUM collection, additional Agentic tracks, several legacy employers/programs, complete PDF extraction and current Zurich event coverage remain product/integration work, not credential-only blockers. See the complete [product/deployment ledger](STUDIO-DEPLOYMENT.md).
+
+---
+
+# Historical snapshot — earlier implementation, 13 October 2026 (before this pass)
+
 # Update validation — 13 October 2026
 
 Ranking version 2.2.0 records the added full-time/future-option and explicit nationality-conflict rules. 51 isolated regression tests pass. Tests include the prior extraction/ranking/workflow checks plus four distinct RPG checklist items, transcript disambiguation, ZIP traversal rejection, CV import dedupe/preferences/Undo protection, immutable Studio snapshots and master files, authenticated document access, CSRF recovery, persistent local sessions, durable job dedupe/error retention, manual refresh/backoff, initial alert suppression, failed-source alert suppression and destination-change cancellation.

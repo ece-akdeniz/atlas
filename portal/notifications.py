@@ -6,7 +6,7 @@ from portal import db
 from portal.model import ranked
 DEFAULT={'enabled':False,'destination':'','min_topics':2,'min_skills':2,'categories':['jobs','research','events'],'daily_limit':2,'mode':'immediate'}
 def settings():return {**DEFAULT,**db.get_meta('notifications',{})}
-def fingerprint(r):return hashlib.sha256(json.dumps({k:r.get(k) for k in ['deadline','event_start','status','title','organization']},sort_keys=True).encode()).hexdigest()
+def fingerprint(r):return hashlib.sha256(json.dumps({k:r.get(k) for k in ['deadline','event_start','event_end','status','registration_status','funding','funding_confirmed','fees']},sort_keys=True).encode()).hexdigest()
 def qualifies(r,p,c):
     if r['category'] not in c['categories'] or r.get('record_kind') not in ['opening','event'] or r.get('status')!='open' or not r.get('extraction_complete'):return False
     if set(r['states'])&{'Closed','Expired','Unverified'} or r['match']['conflicts'] or r['match']['future'] or r.get('explicit_conflict'):return False
@@ -15,6 +15,12 @@ def qualifies(r,p,c):
     from portal.extraction import normalize_skill
     skills={normalize_skill(x) for x in r.get('skills',[])}&{normalize_skill(x) for x in p.get('skills',[])}
     practical=(r.get('hours') and r['hours']<=p.get('max_hours',20)) or r.get('external_students')=='yes' or r.get('funding_confirmed') is True
+    if r['category']=='events':
+        free=bool(re.search(r'\bfree\b|no participation fee|kostenlos|^0(?:[ .,]|$)',str(r.get('fees','')),re.I))
+        access=r.get('external_students')=='yes' or r.get('open_to_all') is True
+        return len(topics)>=c['min_topics'] and bool(r.get('event_start')) and access and (free or r.get('funding_confirmed') is True) and r.get('registration_status') not in ['closed','Closed']
+    if r['category']=='research':
+        return len(topics)>=c['min_topics'] and bool(r.get('activities') or r.get('research_question')) and (len(skills)>=c['min_skills'] or len(topics)>=c['min_topics']+1) and bool(practical)
     return len(topics)>=c['min_topics'] and len(skills)>=c['min_skills'] and bool(practical)
 def configure(payload):
     old=settings();new={**old,**{k:v for k,v in payload.items() if k in DEFAULT}}
@@ -23,7 +29,7 @@ def configure(payload):
     if any(type(new[k])!=int or not 1<=new[k]<=5 for k in ['min_topics','min_skills']):raise ValueError('Evidence thresholds must be 1–5')
     if not isinstance(new['categories'],list) or any(x not in ['jobs','research','events'] for x in new['categories']):raise ValueError('Invalid categories')
     if new['enabled'] and not old['enabled']:
-        db.set_meta('notification_baseline',{r['id']:fingerprint(r) for r in db.rows()});new['enabled_at']=db.now()
+        db.set_meta('notification_baseline',{r['id']:fingerprint(r) for r in db.rows()});db.set_meta('notification_initial_ids',[r['id'] for r in db.rows()]);new['enabled_at']=db.now()
     if not new['enabled'] or new['destination']!=old['destination']:
         with db.connect() as conn:conn.execute("UPDATE notification_events SET status='cancelled' WHERE status IN ('queued','retry')")
         db.set_meta('notification_batch',None)
@@ -33,21 +39,30 @@ def discover():
     c=settings()
     if not c['enabled']:return 0
     baseline=db.get_meta('notification_baseline',{});p=db.get_meta('profile',{});count=0
+    initial=db.get_meta('notification_initial_ids')
+    if initial is None:
+        initial=[r['id'] for r in db.rows() if r.get('discovered','')<=c.get('enabled_at',db.now())];db.set_meta('notification_initial_ids',initial)
     records=db.rows();failed={s['id'] for s in db.sources() if s.get('error')}
     for row in records:
         if any(e['source_id'] in failed for e in row.get('sources',[])):row['verification_warning']='Latest source check failed'
     for r in ranked(records,p,db.now()[:10]):
         fp=fingerprint(r);prior=baseline.get(r['id']);baseline[r['id']]=fp
-        if prior==fp or not qualifies(r,p,c):continue
+        if not qualifies(r,p,c):continue
         with db.connect() as conn:notified=conn.execute("SELECT payload FROM notification_events WHERE opportunity_id=? AND status IN ('accepted','delivered') ORDER BY created DESC LIMIT 1",(r['id'],)).fetchone()
-        if prior and not notified:continue # Existing baseline is never sent as a first alert.
+        if r['id'] in initial and not notified:continue # Immutable activation backlog only.
         changed=None
         if notified:
             old=json.loads(notified['payload']);old_deadline=old.get('deadline')
-            if old_deadline==r.get('deadline') or not r.get('deadline'):continue
-            changed='Application deadline changed from '+str(old_deadline or 'not stated')+' to '+r['deadline']
-        payload={'title':r['title'],'organization':r['organization'],'city':r.get('city'),'type':r.get('type'),'url':r['url'],'deadline':r.get('deadline'),'why':r['match']['why'],'uncertainty':r['match']['questions'][:2],'change':changed,'destination':c['destination']}
+            if old_deadline!=r.get('deadline') and r.get('deadline'):
+                changed='Application deadline changed from '+str(old_deadline or 'not stated')+' to '+r['deadline']
+            elif old.get('event_start')!=r.get('event_start') and r.get('event_start'):
+                changed='Event date changed to '+r['event_start']
+            elif not old.get('funding_confirmed') and r.get('funding_confirmed') is True:
+                changed='Financial support is now confirmed in the posting'
+            else:continue
+        payload={'title':r['title'],'organization':r['organization'],'city':r.get('city'),'type':r.get('type'),'url':r['url'],'deadline':r.get('deadline'),'why':r['match']['why'],'uncertainty':r['match']['questions'][:2],'change':changed,'destination':c['destination'],'event_start':r.get('event_start'),'funding_confirmed':r.get('funding_confirmed')}
         with db.connect() as conn:
+            conn.execute("DELETE FROM notification_events WHERE opportunity_id=? AND fingerprint=? AND status='cancelled' AND attempts=0",(r['id'],fp))
             cursor=conn.execute("INSERT OR IGNORE INTO notification_events(id,opportunity_id,fingerprint,payload,status,created) VALUES(?,?,?,?,?,?)",(uuid.uuid4().hex,r['id'],fp,json.dumps(payload),'queued',db.now()));count+=cursor.rowcount
     db.set_meta('notification_baseline',baseline);return count
 
@@ -98,6 +113,15 @@ def deliver():
             destination=json.loads(rows[0]['payload'])['destination']
             rows=[r for r in rows if json.loads(r['payload'])['destination']==destination]
             db.set_meta('notification_batch',{'ids':[r['id'] for r in rows],'created':now})
+        current={r['id']:r for r in notification_records()};invalid=[]
+        for row in rows:
+            if row['opportunity_id']=='TEST':continue
+            r=current.get(row['opportunity_id'])
+            if not c['enabled'] or not r or not qualifies(r,db.get_meta('profile',{}),c) or row['fingerprint']!=fingerprint(r):invalid.append(row['id'])
+        if invalid:
+            with db.connect() as conn:
+                for identity in invalid:conn.execute("UPDATE notification_events SET status='cancelled',error='Current evidence no longer supports this queued alert' WHERE id=?",(identity,))
+            db.set_meta('notification_batch',None);return
         first=rows[0];key='atlas-'+hashlib.sha256('|'.join(r['id'] for r in rows).encode()).hexdigest();parts=[]
         for row in rows:
             p=json.loads(row['payload'])
@@ -121,3 +145,10 @@ def deliver():
                     conn.execute('UPDATE notification_events SET status=?,attempts=?,next_due=?,error=? WHERE id=?',(state,attempts,next_due,str(e)[:300],row['id']))
     finally:
         with db.connect() as conn:conn.execute("DELETE FROM locks WHERE name='mail'")
+
+
+def notification_records():
+    records=db.rows();failed={s['id'] for s in db.sources() if s.get('error')}
+    for row in records:
+        if any(e['source_id'] in failed for e in row.get('sources',[])):row['verification_warning']='Latest source check failed'
+    return ranked(records,db.get_meta('profile',{}),db.now()[:10])

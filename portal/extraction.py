@@ -2,7 +2,7 @@
 import re
 from bs4 import BeautifulSoup
 
-VERSION='extract-2.2.0'
+VERSION='extract-2.3.0'
 SKILLS={
  'Python':r'python','C++':r'c\+\+','PyTorch':r'pytorch','ROS 2':r'ros[ -]?2',
  'ROS':r'ros(?![ -]?2\b)','MATLAB':r'matlab','Linux':r'linux','OpenCV':r'opencv',

@@ -95,7 +95,8 @@ def jsonld(html,url):
         try: walk(json.loads(script.string or script.get_text()))
         except (ValueError,TypeError): continue
     result=[]
-    for e in entries[:30]:
+    if len(entries)>200:raise SourceError('Structured index exceeds 200 entries; collection incomplete')
+    for e in entries:
         title=text(e.get('title') or e.get('name')); desc=text(e.get('description'))
         if not title or not desc: continue
         kind=e.get('@type'); event='Event' in (kind if isinstance(kind,list) else [kind])
@@ -123,8 +124,9 @@ def rpg(html,url):
         if len(desc)<60: continue
         clean=re.sub(r' - (Available|Taken|Closed).*$', '',title).strip()
         key=re.sub(r'[^a-z0-9]+','-',clean.lower()).strip('-')
-        record={'title':clean,'organization':'University of Zurich','publisher':'University of Zurich','academic_affiliations':['University of Zurich · Robotics and Perception Group'],'department':'Robotics and Perception Group','partners':re.findall(r'in collaboration with ([^)]+)',clean),'category':'research','type':'Master’s thesis / semester project' if 'Semester Project' in desc else 'Master’s thesis','url':url,'identity_url':url+'#'+key,'publisher_id':'rpg-'+key,'summary':clean,'city':'Zurich','country':'Switzerland','tags':tags(clean+' '+desc),'external_students':'not_stated','status':'open' if ' - Available' in title else 'closed','evidence_method':'Project-specific sections on the official RPG page','questions':['Confirm external-student access and home-university supervision.']}
+        record={'title':clean,'organization':'University of Zurich','publisher':'University of Zurich','academic_affiliations':['University of Zurich · Robotics and Perception Group'],'department':'Robotics and Perception Group','partners':re.findall(r'in collaboration with ([^)]+)',clean),'category':'research','type':(re.search(r'(?:Thesis )?Type:\s*(.*?)(?:See project|$)',desc,re.I).group(1).strip() if re.search(r'(?:Thesis )?Type:\s*(.*?)(?:See project|$)',desc,re.I) else 'Unspecified'),'url':url,'identity_url':url+'#'+key,'publisher_id':'rpg-'+key,'summary':clean,'city':'Zurich','country':'Switzerland','tags':tags(clean+' '+desc),'external_students':'not_stated','status':'open' if ' - Available' in title else 'closed','evidence_method':'Project-specific sections on the official RPG page','questions':['Confirm external-student access and home-university supervision.']}
         enrich(record,' '.join(contents),section=clean)
+        record.setdefault('field_evidence',{})['type']={'url':url,'section':clean+' · Thesis Type','excerpt':record['type'],'version':VERSION}
         sirop=BeautifulSoup(' '.join(contents),'html.parser').find('a',href=re.compile(r'https://sirop.org/app/'))
         if sirop:record['publisher_identifiers']={'sirop':sirop['href'].rstrip('/').split('/')[-1],'rpg':record['publisher_id']}
         # Stable legacy ID preserves notes; the SiROP ID is retained for cross-source reconciliation.
@@ -174,7 +176,8 @@ def collect_source(s):
     at=db.now()
     if cached and s['adapter'] in ['rpg','hackatum','jsonld','tumai','lever'] and (status==304 or (digest==cached['hash'] and cached['version']==VERSION)):
         records=json.loads(cached['data'])
-        for r in records: db.upsert(r,s['id'],at)
+        identities={db.upsert(r,s['id'],at) for r in records}
+        reconcile(s['id'],identities,records,at)
         return len(records),'Unchanged; cached validated extraction'
     html=raw.decode('utf-8','replace')
     if any(x in html.lower() for x in ['cf-chl-platform','captcha challenge','verify you are human']): raise SourceError('Access challenge detected; no bypass attempted')
@@ -182,7 +185,7 @@ def collect_source(s):
     if adapter=='hackatum': records=hackatum(html,url)
     elif adapter=='rpg': records=rpg(html,url)
     elif adapter=='jsonld': records=jsonld(html,url)
-    elif adapter in ['recruitee','workable','greenhouse','lever-feed','ashby-html','personio-html','skydio-html','neura-html','join-html','agentic-route','verity-html','fius-pdf']:
+    elif adapter in ['recruitee','workable','greenhouse','lever-feed','ashby-html','personio-html','skydio-html','neura-html','join-html','agentic-route','verity-html','fius-pdf','embotech-pdf','breezy-html']:
         from portal.startups import collect as collect_startup
         records,note=collect_startup(s,html)
     elif adapter in ['dlr','tum-cvg','tum-srl','iff','tumai','lever','eth-projects','fraunhofer','cyber']:
@@ -207,6 +210,8 @@ def collect_source(s):
             target=urljoin(url,a['href'])
             if urlsplit(target).scheme=='https' and re.search(r'thesis|project|student|sirop|\.pdf',target,re.I): links.append({'url':target,'title':text(a)[:160]})
         db.set_meta('candidates:'+s['id'],links[:25]); note=f'{len(links[:25])} candidate links stored; review required before following'
+    # Validate the entire batch before any mutation. A bad detail cannot partially refresh a feed.
+    for record in records:validate(record)
     identities=set()
     previous_records=db.rows()
     for record in records:
@@ -221,15 +226,27 @@ def collect_source(s):
                         record['field_states'][field]={'state':'incomplete'}
                         if old.get('field_evidence',{}).get(field):record['field_evidence'][field]=old['field_evidence'][field]
         identities.add(db.upsert(record,s['id'],old['verified'] if failed_documents and old else at))
-    if records and adapter in ['rpg','dlr','iff','fraunhofer','lever','eth-projects','tum-cvg','tum-srl','tumai']:
-
-        for old in db.rows():
-            if old['id'] not in identities and any(e['source_id']==s['id'] for e in old['sources']):
-                with db.connect() as c: original=json.loads(c.execute('SELECT data FROM opportunities WHERE id=?',(old['id'],)).fetchone()[0])
-                original['verification_warning']='Not present in the latest successful collection; current availability requires confirmation.'
-                db.upsert(original,s['id'],old['verified'])
+    if adapter not in ['reviewed','discovery','pending','alias']:
+        reconcile(s['id'],identities,records,at)
     with db.connect() as c: c.execute('INSERT INTO cache VALUES(?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET hash=excluded.hash,etag=excluded.etag,modified=excluded.modified,version=excluded.version,data=excluded.data,checked=excluded.checked',(url,digest,h.get('ETag'),h.get('Last-Modified'),VERSION,json.dumps(records),at))
     return len(records),note
+
+def reconcile(source_id,identities,records,at):
+    """Absence is uncertainty, never proof of closure. Other live provenance survives."""
+    # Upsert resolves canonical/publisher aliases to actual stored IDs, including ID-less pages.
+    present=set(identities)
+    missing=[]
+    for old in db.rows():
+        if old['id'] in present or not any(e['source_id']==source_id for e in old['sources']):continue
+        missing.append(old['id'])
+        # A successful complete empty index also reaches this path.
+        other=[e for e in old['sources'] if e['source_id']!=source_id and e['verified']>=at[:10] and old['id'] not in db.get_meta('source_missing:'+e['source_id'],[])]
+        if other:continue
+        with db.connect() as c:original=json.loads(c.execute('SELECT data FROM opportunities WHERE id=?',(old['id'],)).fetchone()[0])
+        original['verification_warning']='Not present in the latest complete collection; current availability requires confirmation.'
+        db.upsert(original,source_id,old['verified'])
+    db.set_meta('source_missing:'+source_id,missing)
+    db.set_meta('source_collection:'+source_id,{'at':at,'complete':True,'records':len(records),'missing':len(missing)})
 
 def refresh(force=False):
     import os
