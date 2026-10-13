@@ -64,3 +64,72 @@ class ActivationTests(unittest.TestCase):
   for value in ['nan','inf','-1','0']:
    with patch.dict(os.environ,{'STUDIO_MONTHLY_BUDGET_USD':value}),self.assertRaises(ValueError):providers.budget()
   with patch.dict(os.environ,{'STUDIO_MONTHLY_BUDGET_USD':'1000'}):self.assertEqual(providers.budget(),50)
+
+ def test_quota_failure_is_actionable_and_releases_rejected_request_reservation(self):
+  self.configure();p=studio.create({'posting':{'title':'Vision role','organization':'Lab'}})
+  response=Mock(status_code=429,json=lambda:{'error':{'code':'credit_balance_exhausted','message':'DO NOT ECHO provider private details'}})
+  with patch('portal.writing.requests.post',return_value=response),self.assertRaisesRegex(ValueError,'no available API quota') as error:writing.generate(p,'letter')
+  self.assertNotIn('DO NOT ECHO',str(error.exception))
+  with db.connect() as c:
+   row=c.execute('SELECT actual,status FROM model_usage').fetchone();self.assertEqual(row['actual'],0);self.assertEqual(row['status'],'failed')
+  self.assertEqual(studio.documents(p['id']),[])
+
+ def test_access_challenge_is_not_a_successful_empty_document(self):
+  from portal.adapters import document
+  from portal.collector import SourceError
+  with patch('portal.collector.robots'),patch('portal.collector.fetch',return_value=(200,{},b'Bot Detection: Please wait while we check if you are a Human. Protected with BunkerWeb')):
+   with self.assertRaises(SourceError):document('https://example.com/jobs')
+ def test_connection_error_is_safe_and_retains_uncertain_usage(self):
+  self.configure();p=studio.create({'posting':{'title':'Vision role','organization':'Lab'}})
+  with patch('portal.writing.requests.post',side_effect=writing.requests.ConnectionError('raw internal details')),self.assertRaisesRegex(ValueError,'interrupted') as error:writing.generate(p,'letter')
+  self.assertNotIn('raw internal',str(error.exception))
+  with db.connect() as c:self.assertIsNone(c.execute('SELECT actual FROM model_usage').fetchone()[0])
+
+ def test_receipt_requires_explicit_confirmation_and_provider_acceptance(self):
+  from portal import notifications
+  db.set_meta('notifications',{'destination':'recipient@example.com'})
+  with db.connect() as c:c.execute("INSERT INTO notification_events(id,opportunity_id,fingerprint,payload,status,created) VALUES('mail','TEST','mail',?,'queued',?)",(json.dumps({'destination':'recipient@example.com'}),db.now()))
+  with self.assertRaises(ValueError):notifications.confirm_receipt('mail')
+  with db.connect() as c:c.execute("UPDATE notification_events SET status='accepted' WHERE id='mail'")
+  self.assertEqual(self.client.post('/api/notifications/mail/receipt',headers=self.headers,json={}).status_code,400)
+  r=self.client.post('/api/notifications/mail/receipt',headers=self.headers,json={'received':True});self.assertEqual(r.status_code,200);self.assertEqual(r.json['evidence'],'recipient_confirmation')
+  self.assertEqual(notifications.confirm_receipt('mail')['receipt_confirmed_at'],r.json['receipt_confirmed_at'])
+
+ def test_current_cyber_calendar_preserves_invitation_and_dates_and_excludes_history(self):
+  from portal.community_events import cyber_events
+  index='<h1>Events</h1><div class="item event"><h4><a href="/en/events/test">AI robotics</a></h4></div><h2>Past Events</h2><div class="item event"><h4><a href="/en/events/old">Old</a></h4></div>'
+  detail='<div><div class="btn-link-label">16 October 2099 • 15:00 - 20:00 | MPI-IS Stuttgart</div><h1>AI robotics</h1><div class="apprarent-link"><p>The final pitches present robotics prototypes.</p><p>This event is invite only.</p><h4>Cost</h4><p>60€ per day</p></div></div>'
+  with patch('portal.community_events.document',return_value=detail.encode()) as get:
+   rows,note=cyber_events(index,{'url':'https://cyber-valley.de/en/events'});self.assertEqual(get.call_count,1)
+  self.assertEqual(rows[0]['event_start'],'2099-10-16');self.assertEqual(rows[0]['registration_status'],'Invitation only');self.assertEqual(rows[0]['status'],'unverified');self.assertEqual(rows[0]['fees'],'60€ per day');self.assertEqual(rows[0]['type'],'Networking event')
+  with self.assertRaises(ValueError):cyber_events('<h1>Events</h1><h2>Past Events</h2>',{'url':'https://cyber-valley.de/en/events'})
+  self.assertEqual(cyber_events('<h1>Events</h1><p>No upcoming events</p><h2>Past Events</h2>',{'url':'https://cyber-valley.de/en/events'})[0],[])
+
+ def test_production_setup_keeps_password_hidden_and_refuses_overwrite(self):
+  from scripts.configure_production import prepare
+  from werkzeug.security import check_password_hash
+  folder=prepare('atlas.example.de','long-test-password',Path(self.tmp.name)/'production')
+  env=dict(line.split('=',1) for line in (folder/'atlas.env').read_text().splitlines())
+  self.assertEqual(env['PORTAL_ORIGIN'],'https://atlas.example.de');self.assertTrue(check_password_hash(env['PORTAL_PASSWORD_HASH'],'long-test-password'))
+  self.assertNotIn('long-test-password',(folder/'atlas.env').read_text());self.assertEqual((folder/'atlas.env').stat().st_mode&0o777,0o600)
+  self.assertEqual((folder/'caddy.env').read_text(),'PORTAL_DOMAIN=atlas.example.de\n')
+  with self.assertRaises(ValueError):prepare('atlas.example.de','long-test-password',folder)
+  with self.assertRaises(ValueError):prepare('evil.de\nPORTAL_ENV=development','long-test-password',Path(self.tmp.name)/'bad')
+
+ def test_smartrecruiters_detail_preserves_workload_and_does_not_promote_future_thesis(self):
+  from portal.startups import collect
+  raw='<main itemtype="http://schema.org/JobPosting"><h1 itemprop="title">Internship in Computer Vision</h1><meta itemprop="addressLocality" content="Hildesheim"><meta itemprop="addressCountry" content="Germany"><li itemprop="employmentType">Full-time</li><div itemprop="responsibilities"><ul><li>Develop neural camera calibration.</li><li>Possible continuation as a master thesis.</li></ul></div><div itemprop="qualifications"><ul><li>Python and machine learning experience.</li></ul></div><section id="st-additionalInformation"><div class="wysiwyg">Start: by agreement Duration: 3 - 6 months. Enrollment is required. Please attach your CV and transcripts.</div></section><a data-sr-track="apply">Apply</a></main>'
+  source={'id':'bosch-camera','name':'Robert Bosch GmbH','adapter':'smartrecruiters-detail','url':'https://jobs.smartrecruiters.com/BoschGroup/123456'}
+  rows,note=collect(source,raw);r=rows[0];self.assertEqual(r['type'],'Internship');self.assertEqual(r['employment_type_raw'],'Full-time');self.assertEqual(r['city'],'Hildesheim');self.assertEqual(r['duration'],'3 - 6 months');self.assertTrue(r['required']);self.assertTrue(r['activities'])
+  with self.assertRaises(ValueError):collect(source,raw.replace('data-sr-track="apply"',''))
+
+ def test_bosch_documents_keep_permit_conditional_and_core_documents_required(self):
+  from portal.checklist import extract
+  items={x['label']:x['requirement'] for x in extract('Please attach your CV, transcript of records, enrollment certificate, examination regulations and if indicated a valid work and residence permit.')}
+  self.assertEqual(items,{'CV / résumé':'required','Academic transcript':'required','Enrollment certificate':'required','Examination regulations':'required','Work and residence permit':'conditional'})
+
+ def test_source_workload_reaches_display_and_availability_matching(self):
+  from portal.taxonomy import normalize
+  r=normalize({'category':'jobs','type':'Internship','employment_type_raw':'Full-time'})
+  self.assertEqual(r['types'],['Internship']);self.assertEqual(r['workload'],'Full-time; weekly hours not stated');self.assertEqual(r['employment_arrangements'],['Full-time'])
+  self.assertEqual(normalize(r),r)

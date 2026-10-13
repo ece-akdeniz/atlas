@@ -1,23 +1,23 @@
 """Evidence-bearing application checklists, independent of applicant documents."""
 import re,hashlib
-VERSION='checklist-2.0'
+VERSION='checklist-2.1'
 def extract(text,url='',section='Application instructions'):
     items=[]
     sentences=[]
     for original in re.split(r'(?<=[.!?])\s+|\n+',str(text or '')):
         # Commas/semicolons separate document groups; conjunctions only split when
         # followed by a different named document (never bachelor's and master's).
-        parts=re.split(r';|,|\b(?:but|however)\b|\band\s+(?=(?:(?:an?|your|the|optional|required)\s+)*(?:CV\b|cover\s+letter|portfolio|GitHub|enrol|recommendation|references))',original,flags=re.I)
+        parts=re.split(r';|,|\b(?:but|however)\b|\band\s+(?=(?:(?:an?|your|the|optional|required)\s+)*(?:CV\b|cover\s+letter|portfolio|GitHub|enrol|recommendation|references|if indicated|if applicable))',original,flags=re.I)
         inherited=bool(re.search(r'please|send|submit|attach|include|upload|provide',parts[0],re.I))
         global_required=bool(re.search(r'\b(?:are required|must be (?:submitted|provided))\b',original,re.I)) and not re.search(r'optional|not required|do not',original,re.I)
         for part in parts:
             if part.strip():sentences.append((part.strip(),original.strip(),inherited or global_required))
     for sentence,original,inherited in sentences:
         if not sentence.strip():continue
-        status='optional' if re.search(r'optional|if you wish|welcome to|optionally|freiwillig',sentence,re.I) else 'conditional' if re.search(r'if applicable|where applicable|if available|falls|sofern',sentence,re.I) else 'required' if re.search(r'please|send|submit|attach|required|include|upload|provide|application.{0,15}with|bewerb|einreichen|schicken',sentence,re.I) else 'required' if inherited else 'unclear'
+        status='optional' if re.search(r'optional|if you wish|welcome to|optionally|freiwillig',sentence,re.I) else 'conditional' if re.search(r'if applicable|if indicated|where applicable|if available|falls|sofern',sentence,re.I) else 'required' if re.search(r'please|send|submit|attach|required|include|upload|provide|application.{0,15}with|bewerb|einreichen|schicken',sentence,re.I) else 'required' if inherited else 'unclear'
         if re.search(r'(?:not required|do not (?:need|require)|brauchen wir nicht|nicht erforderlich)',sentence,re.I):continue
         candidates=[]
-        for pattern,label,kind in [(r'\bcv\b|curriculum vitae|r[eé]sum[eé]|lebenslauf','CV / résumé','document'),(r'cover\s+letter|motivation\s+letter|motivational\s+letter|anschreiben|motivationsschreiben','Cover / motivation letter','document'),(r'enrol[l]?ment certificate|immatrikulationsbescheinigung','Enrollment certificate','document'),(r'portfolio','Portfolio','document'),(r'github','GitHub link','answer'),(r'publication(?:s| list)?','Publications','document'),(r'(?:description|summary|overview)s? of (?:your |the )?(?:relevant |previous |past )?projects|project descriptions?|projektbeschreibungen','Descriptions of relevant projects','document'),(r'recommendation letters?|reference letters?','Recommendation letters','document'),(r'\breferences\b','References','answer'),(r'availability|verf[uü]gbarkeit','Availability','answer'),(r'(?:preferred |desired |earliest )?start date|eintrittsdatum','Preferred start date','answer')]:
+        for pattern,label,kind in [(r'\bcv\b|curriculum vitae|r[eé]sum[eé]|lebenslauf','CV / résumé','document'),(r'cover\s+letter|motivation\s+letter|motivational\s+letter|anschreiben|motivationsschreiben','Cover / motivation letter','document'),(r'enrol[l]?ment certificate|immatrikulationsbescheinigung','Enrollment certificate','document'),(r'examination regulations|pr[uü]fungsordnung','Examination regulations','document'),(r'work and residence permit','Work and residence permit','document'),(r'portfolio','Portfolio','document'),(r'github','GitHub link','answer'),(r'publication(?:s| list)?','Publications','document'),(r'(?:description|summary|overview)s? of (?:your |the )?(?:relevant |previous |past )?projects|project descriptions?|projektbeschreibungen','Descriptions of relevant projects','document'),(r'recommendation letters?|reference letters?','Recommendation letters','document'),(r'\breferences\b','References','answer'),(r'availability|verf[uü]gbarkeit','Availability','answer'),(r'(?:preferred |desired |earliest )?start date|eintrittsdatum','Preferred start date','answer')]:
             if re.search(pattern,sentence,re.I):candidates.append((label,kind))
         if re.search('transcript|notenspiegel|notenübersicht',sentence,re.I):
             degrees=[]

@@ -1,4 +1,26 @@
-# Current source audit — 2026-10-13T12:28:03+00:00
+# Current source audit — 2026-10-13T14:47:32+00:00
+
+203 records (99 jobs, 69 research, 35 events), 54 registered sources, 30 operational collectors, 177 records not closed/expired on this evaluation date. Raw record totals include routes and uncertainties. BMW/Bosch remain the two registered failures, last attempt 09:39:07 UTC; no new verification is implied. This delta plus the individual ledger below is the current source backlog; older timestamps remain explicit history.
+
+## Newly operational and independently checked
+
+- **Bosch camera-projection internship (`bosch-camera`) — operational single-posting monitor, 14:43:05 UTC.** Official https://jobs.smartrecruiters.com/BoschGroup/744000153102859 publicly permits HTML collection. Bosch identifies SmartRecruiters as its application system in https://www.bosch.com/de/karriere/faq/. Documented API robots denies collection; no API bypass. One validated Hildesheim internship, full-time, 3–6 months, contact and five checklist items (permit conditional). Original Bosch retired URL stays failed; do not merge distinct employers/jobs or claim entire-board integration. Reprocessing twice retains identity/check timestamp. Next: permitted board-level discovery and stable historical translation/repost linkage; acceptance: all paginated in-scope postings, no copied duplicates, complete employment/material evidence. Missing posting sections/application control fails and retains prior data.
+
+- **Cyber Valley general events (`cyber-valley`) — operational within disclosed scope.** Official https://cyber-valley.de/en/events → two current detail pages, bounded at 20; past-event pagination excluded. nICLAS Forum reused its prior identity, with dates 20–21 October and €60/day evidence. Demo Day 16 October Stuttgart added as a networking event with an explicit invitation-only condition. Neither is represented as confirmed public registration. Repeat 14:32:58 UTC: 2 validated records, 0 additions, 1 classification correction. `cyber-niclas` is now an alias; historical provenance remains. Next: scheduled checks and registration changes; acceptance: no duplicate IDs, malformed/unknown-empty feeds fail without fresh verification.
+- **Aionic — automatic integration still blocked.** A fresh bounded public Notion rendering attempt at approximately 14:33 UTC returned only the Notion shell; public content did not load. No private API, login or challenge bypass used. Official company identity and career link confirmed; the existing manual internship record remains manual. Next: supported public rendering/feed or organizer-supported export; acceptance: substantive validated index/details stored and repeat-stable. No source last-success timestamp was updated by the failed diagnostic.
+- **General SIROP — access-limited, link only.** Fresh robots check returned 403. Official public help describes browsing, restricted affiliation cases and sign-in for applications, but no supported public feed was identified. Lab-published feeds remain separate. Next: provider-supported public integration/access agreement; acceptance: permitted collection, source fields and true timestamps. Do not imitate a logged-in/private API.
+- **MPI jobs — access-limited, not an empty feed.** Both official jobs hosts returned HTTP 200 BunkerWeb human-verification pages. New challenge detection rejects these as failures. Next: official feed or permitted alternative; acceptance: actual posting extraction, never a challenge page classified as zero vacancies.
+- **Embotech — index operational, restricted PDF details partial.** The official career index remains reachable; linked internship CDN PDF is blocked by its access policy. Preserve incomplete flags and prior details. Next: permitted HTML/alternate official document; acceptance: original requirements, contacts and document checklist with page evidence.
+
+## Logo audit correction
+
+All 38 listing organization identities resolve. All 41 candidate mapped images loaded in two themes; visual inspection rejected hackaTUM's favicon as unreadable at UI size. It now joins SIROP, historical Daedalean and Hackathon Hub as four explicitly unresolved source-only brand assets. Keep labeled initials; do not substitute another institution's mark merely because a file loads. Other verified official assets, institute publisher/employer separation and shared mappings are retained. Manifest records the rejection. Next: suitable official mark; acceptance: identity, provenance, proportions and legibility in both themes.
+
+All other source-specific unfinished actions below remain unfinished (not deployment credential blockers): legacy employers/university/program parsers, roboTUM deeper details, restricted PDF alternatives and Aionic automatic extraction. See [current validation](VALIDATION.md) for execution evidence.
+
+---
+
+# Historical source audit — 2026-10-13T12:28:03+00:00
 
 This current section supersedes the clearly dated history below. Registry entries, operational collectors and usable current opportunities are different counts.
 

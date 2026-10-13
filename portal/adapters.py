@@ -14,7 +14,7 @@ def base(title,url,org,city,category='research',kind='opening'):
 def document(url):
     from portal.collector import robots,fetch,SourceError
     robots(url);code,headers,raw=fetch(url)
-    if any(x in raw[:100000].lower() for x in [b'cf-chl-platform',b'captcha challenge',b'verify you are human']):raise SourceError('Access challenge; collection stopped')
+    if any(x in raw[:100000].lower() for x in [b'cf-chl-platform',b'captcha challenge',b'verify you are human',b'protected with bunkerweb',b'check if you are a human']):raise SourceError('Access challenge; collection stopped')
     return raw
 
 def evidence(r,field,value,quote,section,url=None,page=None):

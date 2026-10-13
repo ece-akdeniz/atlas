@@ -184,9 +184,12 @@ def collect_source(s):
         reconcile(s['id'],identities,records,at)
         return len(records),'Unchanged; cached validated extraction'
     html=raw.decode('utf-8','replace')
-    if any(x in html.lower() for x in ['cf-chl-platform','captcha challenge','verify you are human']): raise SourceError('Access challenge detected; no bypass attempted')
+    if any(x in html.lower() for x in ['cf-chl-platform','captcha challenge','verify you are human','protected with bunkerweb','check if you are a human']): raise SourceError('Access challenge detected; no bypass attempted')
     adapter=s['adapter']
-    if adapter=='eth-ai-events':
+    if adapter=='cyber-events':
+        from portal.community_events import cyber_events
+        records,note=cyber_events(html,s)
+    elif adapter=='eth-ai-events':
         from portal.community_events import ethai
         records,note=ethai(html,s)
     elif adapter=='robotum-rendered':
@@ -195,7 +198,7 @@ def collect_source(s):
     elif adapter=='hackatum': records=hackatum(html,url)
     elif adapter=='rpg': records=rpg(html,url)
     elif adapter=='jsonld': records=jsonld(html,url)
-    elif adapter in ['recruitee','workable','greenhouse','lever-feed','ashby-html','personio-html','skydio-html','neura-html','join-html','agentic-route','verity-html','fius-pdf','embotech-pdf','breezy-html']:
+    elif adapter in ['smartrecruiters-detail','recruitee','workable','greenhouse','lever-feed','ashby-html','personio-html','skydio-html','neura-html','join-html','agentic-route','verity-html','fius-pdf','embotech-pdf','breezy-html']:
         from portal.startups import collect as collect_startup
         records,note=collect_startup(s,html)
     elif adapter in ['dlr','tum-cvg','tum-srl','iff','tumai','lever','eth-projects','fraunhofer','cyber']:

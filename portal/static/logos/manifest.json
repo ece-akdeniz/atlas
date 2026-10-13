@@ -173,7 +173,9 @@
     "evidence_url": "https://hack.tum.de/",
     "url": "https://hack.tum.de/wp-content/uploads/2021/09/cropped-hackaTUMfavicon-192x192.png",
     "verified": "2026-10-13",
-    "bytes": 4311
+    "bytes": 4311,
+    "usable": false,
+    "rejection_reason": "Insufficient internal contrast at card size; independent two-theme visual check 2026-10-13."
   },
   "daad.svg": {
     "identity": "daad",

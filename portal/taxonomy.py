@@ -1,6 +1,6 @@
 """Versioned controlled types, separate from source-confirmed workload."""
 import re
-VERSION='types-1.1'
+VERSION='types-1.2'
 TYPE_OPTIONS={
  'jobs':['Working student','Internship','Research assistant','Graduate role','Professional role','Unspecified'],
  'research':['Master’s thesis','Bachelor’s thesis','Doctoral position','Semester project','Guided research','Interdisciplinary project','Student project','Thesis (degree unspecified)','Research internship','Internship','Research assistant','Visiting research','Academic collaboration','Academic route','Lab lead','Unspecified'],
@@ -36,6 +36,7 @@ def normalize(record):
  for label,pattern in [('Full-time',r'full[ _-]?time|vollzeit|100\s*%'),('Part-time',r'part[ _-]?time|teilzeit')]:
   if re.search(pattern,str(raw),re.I):arrangements.append(label)
  r['employment_arrangements']=arrangements or ['Not stated']
+ if arrangements and not r.get('workload'):r['workload']=' / '.join(arrangements)+'; weekly hours not stated'
  r['taxonomy_version']=VERSION
  return r
 

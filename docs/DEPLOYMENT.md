@@ -4,6 +4,6 @@
 
 The supported deployment is **Debian 13 + native systemd + Caddy**, with separate web, collector and document workers, SQLite/private assets under `/var/lib/atlas`, and Bubblewrap for LaTeX. The older Docker Compose example is not the supported Application Studio production path and has not passed its compiler-isolation gates.
 
-No production server exists yet. The user confirmed no server or domain on 13 October 2026. No purchase or live deployment is implied by preparation. Account/domain/SSH access and approval of the final price are required. Local writing can be activated independently via `python -m scripts.configure_providers writing`; keys must never be pasted into chat or Git.
+No production server exists yet. The user confirmed no server or domain on 13 October 2026. No purchase or live deployment is implied by preparation. Account/domain/SSH access and approval of the final price are required. Local writing key/account/model access has passed; actual generation is currently blocked by exhausted API credit. Add credit in the account Billing page; no key replacement is necessary. `python -m scripts.configure_providers writing` remains the secure setup/rotation command; keys must never be pasted into chat or Git.
 
 All dated local, provider and production evidence is recorded separately in [VALIDATION.md](VALIDATION.md). Do not use a manual refresh as proof of scheduling, an HTTP email response as proof of Gmail receipt, or a local browser viewport as proof of access from a physical device.

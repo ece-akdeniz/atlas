@@ -1,4 +1,53 @@
-# Current validation — 13 October 2026, 12:28 UTC (14:28 Berlin)
+# Current validation — 13 October 2026, 14:49 UTC
+
+Starting commit: `2b1a103`. This section supersedes the dated history below. No live hosted URL exists. Account/model access passed; real writing generation did **not** pass. No email was sent or Gmail receipt confirmed.
+
+## Actual provider execution
+
+The user's private OpenAI configuration is now present. Both CLI preflight and Studio's account check reached the real account and verified `gpt-6-luna`; the browser check was recorded at **14:01:48 UTC**. The application and separately running document worker both read the protected configuration. Published standard rates were rechecked at $0.10 input / $0.50 output per million tokens; the Atlas monthly cap remains $2. No key or raw provider error body is exposed in UI or committed.
+
+Using the existing real Sereact Internship R&D project, actual selected résumé/letter compilation-copy templates, English/Brief (250 words)/direct settings and explicit processing consent, the document worker attempted real generation. Requests failed: HTTP 429, a connection reset, and HTTP 429. A bounded diagnostic using the same consented payload identified **`credit_balance_exhausted` / `insufficient_quota`**. Four model-usage entries exist, none produced a document. Recorded actual usage is $0; two uncertain earlier outcomes retain **$0.0069576** in reservations. This is the application's ledger, not a verified provider invoice. No fabricated success or model-quality claim.
+
+New handling releases reservations for explicit rejected requests, retains them when outcome/usage is unknown, and displays safe actionable quota/connection errors. Studio now retains saved language/tone/length selections visibly after reload and shows the latest failed job within its own project. The unchanged prior local starter is not a model draft. Remaining real checks: letter quality, selected-section revision, accepted résumé suggestions, both generated PDFs, language/tone/length and actual successful usage. Exact next dependency: owner adds API credit in OpenAI Billing, then signals completion; a new key is not required.
+
+## Implemented and locally tested in this continuation
+
+- **86 isolated regression tests passed**, including quota/error accounting, receipt-confirmation gating, access-challenge rejection, current Cyber Valley index/detail parsing, dates/invitation/fees, and hidden-password production configuration. Existing notification qualification/backlog/delayed qualification/revalidation/dedupe/frequency, CV conflict/Undo, résumé application, section revision, project jobs, checklists, disappearance and taxonomy tests passed. Fixture tests remain distinct from provider execution.
+- JS syntax and native installer/off-site backup shell syntax checks passed. Production configuration tests verify hidden password hashing, mode-600 files, hostname validation and refusal to overwrite existing settings. No Linux service or production compiler execution is claimed.
+- A full private archive `data/backups/before-real-writing-20261013.tar.gz` preceded changes. Afterward, workflow/bookmarks/notes/tracking (3), uploads/templates (5) and document versions (1) remain byte-identical. Profile facts remain identical excluding normal last-visit updates. The existing project's selected template/length settings changed only as part of the authorized writing check. No sample project or generated fixture was added to personal data.
+- Email history now distinguishes provider acceptance from recipient-confirmed receipt. Only an accepted message to the current destination can be marked received; this requires explicit confirmation in the UI. The isolated endpoint tests passed. Current email setup lacks Resend key, verified sender and production HTTPS origin; Send test is correctly disabled. No inbox access requested and no receipt assertion made.
+
+## Independent browser and logo checks
+
+Rechecked current code rather than relying on prior claims: Interests first, CV Upload last, private eligibility collapsed, no permanent import history. Fresh/reloaded Browse starts Industry; Research → search-all → off restores Research. Cards/List survives reload independently. City shortcuts and full City dropdown agree; Munich exposes Oberpfaffenhofen while retaining its real location, and active-city toggle clears only location.
+
+Desktop 1280px, tablet 820×1180 and phone 390×844 rendered without horizontal page overflow. Phone List's first result starts at about 484px and includes its actions; all three categories and city labels fit. Dark-gray/plum remains intact; mobile light Programs/Stuttgart displays both Cyber Valley events with dates and the invitation condition. Earlier Calendar/Compare checks are retained below; they were not relabeled as new physical-device checks.
+
+Audited all 38 listing organization names (including the subsequently added Robert Bosch GmbH, using the same official Bosch mark) and all source mappings. All 41 mapped candidate image assets loaded in both themes (82 renders). Visual inspection **rejected hackaTUM's favicon** for unreadable internal contrast despite successful loading. It now uses labeled initials; four unresolved source identities are SIROP, historical Daedalean, Hackathon Hub and hackaTUM. The other official assets and shared identity mappings remain, including institute-mediated employers. A mapping alone is not proof of readability. Manifest retains rejection/provenance evidence.
+
+After the local services restarted, browser confirmed Worker online, configured writing model/cap/reservation, persisted Brief setting, project-scoped failed-job notice and unchanged draft. No retry was silently scheduled after the quota failure. Screenshots are in ignored `docs/screenshots/provider-execution/`; private UI images are not committed. Browser viewport reset and Dark preference restored.
+
+## Current collection snapshot
+
+At **14:47:32 UTC**: **203 records / 54 sources / 30 operational collectors**; categories 99 jobs, 69 research, 35 events; **177 not closed or expired on the evaluation date**. Counts include unverified records and academic routes, not 177 suitable applications. Two registered failures remain BMW/Bosch, last attempt **09:39:07 UTC**, with their original robots-resolution errors; neither was newly verified.
+
+Cyber Valley's previously pending general calendar now follows its official current-event section into two detail pages: nICLAS Forum (20–21 October, €60/day, registration needs confirmation) and AI Incubator Demo Day (16 October, Stuttgart, invitation only). One new record added; existing nICLAS identity reused. Repeat **14:32:58 UTC**: 2 records, **0 added, 1 updated** for the corrected networking-only Demo Day type. No duplicate. Maximum 20 upcoming details; past-event pagination is explicitly out of scope. Missing current/past boundary, malformed dates or missing empty-state evidence fails closed. The former nICLAS-only source is now an alias, preserving provenance. Stored event availability remains unverified rather than inferring public registration.
+
+Fresh permitted checks: general SIROP robots returns 403; Aionic's bounded public Notion rendering still fails to load content (14:33 UTC); no bypass or private API used. Both MPI jobs hosts return BunkerWeb bot-verification pages despite HTTP 200; these now fail as access challenges rather than empty feeds. Embotech linked internship PDF remains blocked at the official CDN; preserved details remain incomplete. No successful-collection timestamp is manufactured for these diagnostic checks. Individual source backlog remains in the source audit.
+
+
+**Bosch narrow monitored source:** the official current SmartRecruiters HTML page was permitted; its documented public API was disallowed by robots and was not used. At **14:43:05 UTC**, the new `bosch-camera` collector validated and stored one neural camera-projection internship. It preserves Hildesheim (an alternative outside priority metros), official Full-time workload, 3–6 months, named functional contact and five requested materials. Work/residence permit is conditional; CV, transcript, enrollment certificate and examination regulations required. A possible subsequent master's thesis is not imported as a current thesis opening. Same fetched page reprocessed twice: stable identity and 203 total records, original verification retained. This is monitored single-posting coverage, not a Bosch-board repair; the retired source remains visibly failed.
+
+A browser check caught another real defect: source-confirmed employment arrangement affected the filter but sometimes left List workload unspecified. Shared normalization `types-1.2` now fills the workload display from published arrangement evidence, making availability checks consistent too. A new private backup preceded reprocessing of existing records; no publication/verification date was refreshed by normalization. Cards and List now both show the Bosch Full-time arrangement; details show all five checklist requirements and the contact. The official Bosch mark loads and renders correctly. Screenshots `atlas-bosch-card.png` and `atlas-bosch-list.png` are retained locally. New regression checks normalization idempotence and the conditional permit clause.
+
+## External execution gates still open
+
+No server/domain exists; no purchase approval or SSH target has been supplied. The one supported runbook uses native Debian/Caddy/systemd with private data, isolated compilation and off-site backups. Clarified the correct native Caddyfile and added secure production-settings preparation. €9.51/month hosting/domain proposal remains a calculated public-price quote, not a purchase or bill. Provider generation awaits API credit; Gmail awaits verified sender/Resend key plus live origin. Physical laptop/phone/iPad access, laptop-disconnected scheduling, remote document jobs, restart/restore and Linux compiler isolation remain untested, each with acceptance steps in the runbook. Source-specific unfinished collectors are independent product work, not credential blockers.
+
+---
+
+# Historical validation — 13 October 2026, 12:28 UTC
+
 
 This section supersedes the dated snapshots below. Starting commit: `cbb0e30`. No production, provider-generation or Gmail-delivery claim is made. A complete private backup (`before-activation-update-20261013.tar.gz`) preceded changes. Comparing its database to the current one confirmed workflow/bookmarks/notes/tracking (3 rows), uploads (5), Studio projects (1) and document versions (1) were byte-identical. Profile values were unchanged except normal `last_visit` updates. No fixture project or document was inserted into the personal database.
 

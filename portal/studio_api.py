@@ -154,3 +154,9 @@ def provider_check():
     except requests.RequestException:raise ValueError('Provider connection failed; existing drafts remain available')
     result['checked_at']=db.now();db.set_meta('writing_preflight',result)
     return jsonify(result)
+
+@bp.post('/api/notifications/<identity>/receipt')
+def confirm_email_receipt(identity):
+    from portal.notifications import confirm_receipt
+    if (request.get_json() or {}).get('received') is not True:raise ValueError('Confirm that this message arrived in your inbox')
+    return jsonify(confirm_receipt(identity))

@@ -15,7 +15,9 @@ Status: executable preparation, **not production-tested**. Owner must supply the
 
 **Recurring hosting total: €9.51/month**, excluding optional writing API usage. This is a calculated quote from public prices, not a measured bill or checkout authorization. Domain billed annually. Confirm CX23 availability; do not substitute a costlier VM without approval. No second server, managed database or external scheduler.
 
-Writing is separate: GPT-6 Luna standard $0.10 input/$0.50 output per million tokens, $2/month Atlas reservation cap. At 50 drafts of 8k input + 2k output each, estimated usage is $0.09/month before retries/tax; worst allowed application spend is $2 before tax/FX. Leave at least €3/month of the €15 budget for exchange-rate/tax variation. Set a matching account project budget/alert and turn off automatic credit replenishment if unwanted. [Current OpenAI model](https://developers.openai.com/api/docs/models/gpt-6-luna), [pricing](https://developers.openai.com/api/docs/pricing). No paid generation has yet been measured.
+Writing is separate: GPT-6 Luna standard $0.10 input/$0.50 output per million tokens, $2/month Atlas reservation cap. At 50 drafts of 8k input + 2k output each, estimated usage is $0.09/month before retries/tax; worst allowed application spend is $2 before tax/FX. Leave at least €3/month of the €15 budget for exchange-rate/tax variation. Set a matching account project budget/alert and turn off automatic credit replenishment if unwanted. [Current OpenAI model](https://developers.openai.com/api/docs/models/gpt-6-luna), [pricing](https://developers.openai.com/api/docs/pricing). Account/model access passed; real generation returned depleted-credit errors. No successful generation or provider invoice has been measured. Add credit through account Billing before retrying; the $2 Atlas cap remains enforced.
+
+Networking: incoming/internal traffic is free; outbound transfer above the selected plan allowance is billable. Hetzner sends 75%/100% alerts, not a hard spending cap. Confirm the actual German CX23 allowance/overage in checkout and do not approve paid add-ons. This small private portal should stay within allowance, but €9.51 is not an absolute traffic/storage bill ceiling. [Official billing rules](https://docs.hetzner.com/cloud/billing/faq/).
 
 ## Exact owner steps before access exists
 
@@ -26,6 +28,8 @@ Writing is separate: GPT-6 Luna standard $0.10 input/$0.50 output per million to
 5. For off-site backups, create a private B2 bucket, configure a bucket-scoped application key, and provide it through the server's protected backup environment file. Save the restic recovery password separately in your password manager. Do not paste either secret into chat.
 
 ## Local writing activation now (does not need the server)
+
+Observed 13 October, 14:01 UTC: the existing private key and selected model passed preflight. Real generation later returned `credit_balance_exhausted`; add API credit in the account Billing page, then retry. The commands below remain the setup/rotation procedure, not a request to replace the working key.
 
 ```sh
 cd /Users/Student/Downloads/Atlas
@@ -48,12 +52,27 @@ runuser -u atlas -- env PLAYWRIGHT_BROWSERS_PATH=/var/lib/atlas/browser-cache /o
 
 No personal browser profile is used. The collector uses the Chromium sandbox; test rendering under the actual service unit and do not disable it if namespace support fails.
 
-Create `/etc/atlas.env` as root:atlas mode 640 using the server's terminal, containing:
+Prepare production authentication locally only after choosing the hostname:
 
-- `PORTAL_ENV=production`, `PORTAL_DOMAIN=atlas.<your-domain>`, `PORTAL_ORIGIN=https://atlas.<your-domain>`.
-- `SECRET_KEY`: at least 32 random characters, generated on the host.
-- `PORTAL_PASSWORD_HASH`: generated with `werkzeug.security.generate_password_hash` from a hidden password prompt. Never save the plaintext password.
-- `ATLAS_PROVIDER_CONFIG=/var/lib/atlas/provider-settings.json`, `PLAYWRIGHT_BROWSERS_PATH=/var/lib/atlas/browser-cache`.
+```sh
+.venv/bin/python -m scripts.configure_production --domain atlas.your-domain.de
+```
+
+The hidden prompt hashes a minimum-12-character sign-in password, generates a random session secret and creates mode-600 files inside ignored `private/production-settings/`. It refuses to overwrite an existing directory and starts no service. Transfer both files over authenticated SSH to a private staging directory on the approved host (replace `atlas-host` with the verified alias):
+
+```sh
+ssh atlas-host 'umask 077; mkdir -p ~/atlas-settings'
+scp private/production-settings/atlas.env private/production-settings/caddy.env atlas-host:atlas-settings/
+```
+
+On the server, install them without displaying their contents:
+
+```sh
+sudo install -o root -g atlas -m 640 ~/atlas-settings/atlas.env /etc/atlas.env
+sudo install -o root -g caddy -m 640 ~/atlas-settings/caddy.env /etc/caddy/atlas.env
+```
+
+The app file contains production domain/origin, hashed password, random session secret, private provider path and browser-cache path. Keep transfer copies private; never paste or commit them. Caddy receives only the domain file, not provider or application secrets.
 
 Run the provider setup as atlas with `ATLAS_PROVIDER_CONFIG` set to that path, or keep keys in `/etc/atlas.env`. Environment settings override private JSON. The app never returns secrets in API state. Keep Caddy's separate `/etc/caddy/atlas.env` limited to `PORTAL_DOMAIN`; it must not receive application/model/email secrets.
 
@@ -65,7 +84,7 @@ Create a full consistent local archive with `python -m scripts.backup backup dat
 
 Inspect SQLite integrity and counts; preserve originals. Stop all three services before switching `/var/lib/atlas` to the restored dataset. Keep browser-cache and provider configuration separately during swaps. Set private ownership to atlas:atlas and directories 700/files 600. The database path is `/var/lib/atlas/portal.sqlite3`; uploaded files must remain under the archive's existing `private/` structure.
 
-Run schema/bootstrap upgrades only after a complete backup, with the workers stopped. Start one web service (Gunicorn loopback 8000), one collector and one document worker using `deploy/systemd`. Test loopback authenticated startup before installing the Caddy site. Set Caddy's systemd drop-in EnvironmentFile to `/etc/caddy/atlas.env`, validate `/etc/caddy/Caddyfile`, then start HTTPS. No loopback development port is exposed.
+Run schema/bootstrap upgrades only after a complete backup, with the workers stopped. Start one web service (Gunicorn loopback 8000), one collector and one document worker using `deploy/systemd`. Test loopback authenticated startup before installing the Caddy site. Set Caddy's systemd drop-in EnvironmentFile to `/etc/caddy/atlas.env`, install `deploy/Caddyfile.native` as `/etc/caddy/Caddyfile` (loopback `127.0.0.1:8000`; never the legacy Docker `web:8000` target), validate it with the same domain environment, then start HTTPS. No loopback development port is exposed.
 
 ## Compiler, restart and recovery gates
 
@@ -97,5 +116,5 @@ Record each result and timestamp in VALIDATION.md:
 - Service restarts preserve state and recover jobs; backup restored into an empty dataset and inspected.
 - Production LaTeX private-file/shell/network/resource tests; actual templates compile and PDFs inspected.
 - Real writing generation, single-section revision and selected résumé edits, unchanged masters, usage measured, language/tone/length reviewed, provider outage safe.
-- Resend verified domain, clearly labeled test sent, **provider acceptance** recorded, then **Gmail receipt confirmed by the user**. No false “delivered” assertion from HTTP 200.
+- Resend verified domain, clearly labeled test sent, **provider acceptance** recorded, then **Gmail receipt confirmed by the user**. No false “delivered” assertion from HTTP 200. After the recipient actually sees the message, Settings → Delivery history → Confirm receipt records explicit recipient confirmation; never click it based solely on provider acceptance.
 - One qualifying synthetic alert in an isolated notification database sent as a clearly labeled test; replay produces no duplicate and daily limits hold. Do not enable a flood of existing listings or fabricate a real opportunity.

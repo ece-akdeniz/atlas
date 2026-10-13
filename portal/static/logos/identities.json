@@ -82,13 +82,14 @@
     "Mercedes-Benz": "mercedes.webp",
     "mpi-is": "max-planck.png",
     "hackzurich": "hackzurich.svg",
-    "hackatum": "hackatum.png",
     "daad": "daad.svg",
     "start-hack": "start-hack.svg",
     "workingstudentjobs": "workingstudent.svg",
     "tumai": "tumai.svg",
     "eth-ai-club": "eth-ai-club.svg",
-    "ETH AI Club": "eth-ai-club.svg"
+    "ETH AI Club": "eth-ai-club.svg",
+    "bosch-camera": "bosch.svg",
+    "Robert Bosch GmbH": "bosch.svg"
   },
   "dark_plate": [
     "airbus.svg",
@@ -109,6 +110,7 @@
   "unresolved": {
     "sirop": "General SIROP site blocks access (403); no independently verified suitable brand asset. Public lab feeds keep their lab identity.",
     "daedalean": "Official domain redirects to Destinus. Shared collection does not establish that the historical Daedalean brand should be replaced; retain initials until a suitable official asset is available.",
-    "hackathonhub": "Official touch icon loads as a tiny dot at card size; unsuitable as a recognizable brand mark. Retain labeled initials until a usable official asset is obtained."
+    "hackathonhub": "Official touch icon loads as a tiny dot at card size; unsuitable as a recognizable brand mark. Retain labeled initials until a usable official asset is obtained.",
+    "hackatum": "Official favicon was rendered but rejected: the dark mark on dark pixels is unreadable at UI size in both themes. Retain labeled initials until the organizer supplies a suitable mark."
   }
 }

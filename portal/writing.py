@@ -3,7 +3,7 @@ from portal import providers
 import os,json,hashlib,uuid,re
 import requests
 from portal import db,studio
-PROMPT_VERSION='studio-writing-2.0'
+PROMPT_VERSION='studio-writing-2.1'
 RATES={'gpt-6-luna':(.10,.50),'gpt-6.1-sol':(2.,10.)}
 def generate(p,kind,template_id=None,section=None,current_draft=None):
     if not providers.get('OPENAI_API_KEY'):raise ValueError('Writing provider not configured; set OPENAI_API_KEY server-side')
@@ -33,7 +33,17 @@ def generate(p,kind,template_id=None,section=None,current_draft=None):
         c.execute('INSERT INTO model_usage VALUES(?,?,?,?,?,?,?)',(identity,month,model,reservation,None,'reserved',db.now()))
     try:
         response=requests.post('https://api.openai.com/v1/responses',headers={'Authorization':'Bearer '+providers.get('OPENAI_API_KEY'),'Content-Type':'application/json'},json={'model':model,'service_tier':'default','store':False,'instructions':prompt,'input':raw,'max_output_tokens':6000,'text':{'format':{'type':'json_schema','name':'application_writing','strict':True,'schema':schema}}},timeout=75)
-        if response.status_code!=200:raise ValueError('Writing provider request failed ('+str(response.status_code)+'); your existing drafts are unchanged')
+        if response.status_code!=200:
+            try:code=response.json().get('error',{}).get('code')
+            except (ValueError,AttributeError):code=None
+            messages={
+                'insufficient_quota':'OpenAI project has no available API quota. Add API billing/credits or raise its project limit, then retry. ChatGPT subscription billing is separate.',
+                'rate_limit_exceeded':'OpenAI temporarily rate-limited this request. Wait and retry; no automatic paid retry was made.',
+                'model_not_found':'This OpenAI project cannot use the selected model. Run the account check before retrying.',
+                'invalid_api_key':'OpenAI rejected the key. Replace it using the hidden terminal setup.'}
+            if response.status_code in (400,401,403,404,429):
+                with db.connect() as c:c.execute('UPDATE model_usage SET actual=0 WHERE id=?',(identity,))
+            raise ValueError(messages.get('insufficient_quota' if code=='credit_balance_exhausted' else code,'Writing provider request failed (HTTP '+str(response.status_code)+').')+' Existing drafts are unchanged.')
         data=response.json();text=''.join(v.get('text','') for item in data.get('output',[]) for v in item.get('content',[]) if v.get('type')=='output_text');result=json.loads(text)
         allowed={f['id'] for f in facts}
         if not isinstance(result.get('sections'),list) or not isinstance(result.get('edits'),list):raise ValueError('Invalid structured model output')
@@ -50,6 +60,9 @@ def generate(p,kind,template_id=None,section=None,current_draft=None):
         with db.connect() as c:
             c.execute('UPDATE model_usage SET status=?,actual=? WHERE id=?',('complete',actual,identity));c.execute('INSERT OR REPLACE INTO generation_cache VALUES(?,?,?,?,?)',(key,json.dumps(result),model,PROMPT_VERSION,db.now()))
         return result
+    except requests.RequestException:
+        with db.connect() as c:c.execute("UPDATE model_usage SET status='failed' WHERE id=?",(identity,))
+        raise ValueError('Connection to OpenAI was interrupted. Existing drafts are unchanged; the budget reservation is retained because usage is unknown. Retry manually when connectivity returns.') from None
     except Exception:
         with db.connect() as c:c.execute("UPDATE model_usage SET status='failed' WHERE id=?",(identity,))
         raise

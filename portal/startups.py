@@ -8,6 +8,8 @@ from portal.adapters import base,document,evidence
 from portal.extraction import enrich,clean,recognize_skills,pdf_details,sentences
 from portal.model import tags
 SOURCES=[
+ ('bosch-camera','Robert Bosch GmbH','https://jobs.smartrecruiters.com/BoschGroup/744000153102859','smartrecruiters-detail'),
+ ('cyber-valley','Cyber Valley · upcoming events','https://cyber-valley.de/en/events','cyber-events'),
  ('eth-ai-club','ETH AI Club · upcoming events','https://www.ethaiclub.org/','eth-ai-events'),
  ('quantum-systems','Quantum Systems','https://career.quantum-systems.com/api/offers','recruitee'),
  ('sereact','Sereact','https://jobs.ashbyhq.com/sereact','ashby-html'),
@@ -82,7 +84,34 @@ def role(s,title,url,identity,body,city=None,country=None,requirements=None,empl
 
 def collect(s,raw):
     adapter=s['adapter'];records=[];seen=set();total=0
-    if adapter in ['recruitee','workable','greenhouse','lever-feed']:
+    if adapter=='smartrecruiters-detail':
+        soup=BeautifulSoup(raw,'html.parser');main=soup.select_one('main[itemtype="http://schema.org/JobPosting"]')
+        if not main:raise ValueError('Published JobPosting missing; retain previous details pending closure verification')
+        def value(prop):
+            el=main.select_one('[itemprop="'+prop+'"]')
+            return clean(el.get('content') or el.get_text(' ',strip=True)) if el else None
+        title=value('title');activities=main.select_one('[itemprop="responsibilities"]');required=main.select_one('[itemprop="qualifications"]');extra=main.select_one('#st-additionalInformation .wysiwyg')
+        if not title or not activities or not required or not extra:raise ValueError('Structured posting sections incomplete')
+        if not soup.select_one('[data-sr-track="apply"]'):raise ValueError('Application control missing; availability requires review')
+        body='<h2>Responsibilities</h2>'+str(activities)+'<h2>Qualifications</h2>'+str(required)+'<h2>Application instructions</h2>'+str(extra)
+        r=role(s,title,s['url'],urlsplit(s['url']).path.split('/')[-1].split('-')[0],body,value('addressLocality'),value('addressCountry'),str(required),value('employmentType'))
+        r['organization_id']='bosch';r['publisher']='Bosch Group via SmartRecruiters';r['published']=value('datePosted');r['originating_page']='https://www.bosch.com/de/karriere/faq/'
+        # Possible continuation as a thesis is not a current thesis opening.
+        r['type']='Internship' if re.search(r'internship|praktikum',title,re.I) else r['type']
+        workplace=main.select_one('spl-job-location');r['arrangement']=workplace.get('workplacetype') if workplace else None
+        duration=re.search(r'Duration:\s*([^.]*)',clean(extra.text));start=re.search(r'Start:\s*(.*?)\s*Duration:',clean(extra.text))
+        if duration:evidence(r,'duration',duration[1].split('Requirement')[0].strip(),duration[0][:120],'Additional Information')
+        if start:evidence(r,'start',start[1],start[0],'Additional Information')
+        contact=next((x for x in extra.find_all('p') if 'Need further information about the job?' in clean(x.text)),None)
+        if contact:
+            lines=[x for x in contact.stripped_strings if x!='Need further information about the job?']
+            evidence(r,'contacts',[' · '.join(lines)],clean(contact.text),'Additional Information · contact')
+        from portal.checklist import for_record
+        requested=for_record(r)
+        if requested:evidence(r,'materials',[x['label'] for x in requested],r['application_method'],'Additional Information · application documents')
+        r['extraction_complete']=True
+        return [r],'One official posting monitored; public application control and structured sections checked. Manually discovered seed; broader Bosch API collection disallowed by robots. Published location retained as an alternative outside priority metros.'
+    elif adapter in ['recruitee','workable','greenhouse','lever-feed']:
         payload=json.loads(raw)
         key='offers' if adapter=='recruitee' else 'jobs'
         if adapter=='lever-feed':
@@ -258,10 +287,11 @@ def collect(s,raw):
     return records,f'{len(records)} relevant validated records from {total} published entries; official publisher IDs; no title-only quota. All index entries inspected; eligible detail pages followed.'
 
 def upgrade():
-    if db.get_meta('startup_registry')=='6':return
+    if db.get_meta('startup_registry')=='8':return
     with db.connect() as c:
         for identity,name,url,adapter in SOURCES:
-            data={'name':name,'url':url,'adapter':adapter,'category':'events' if identity in ['robotum','eth-ai-club'] else 'research' if identity in ['807d62512a4a','eth-agentic-systems'] else 'jobs','enabled':True,'interval_hours':24,'status':'Pending first collection','organization_id':identity,'coverage':'Official feed or bounded index-to-detail collector; excludes senior and unrelated roles.','operational':False}
+            data={'name':name,'url':url,'adapter':adapter,'category':'events' if identity in ['robotum','eth-ai-club','cyber-valley'] else 'research' if identity in ['807d62512a4a','eth-agentic-systems'] else 'jobs','enabled':True,'interval_hours':24,'status':'Pending first collection','organization_id':identity,'coverage':'Official feed or bounded index-to-detail collector; excludes senior and unrelated roles.','operational':False}
+            if identity=='bosch-camera':data['organization_id']='bosch';data['coverage']='One manually discovered official SmartRecruiters posting monitored daily; not a complete Bosch board. Public API robots disallows collection. Original failed Bosch source retained.'
             if identity=='robotum':data['coverage']='Public rendered organizer index, at most 100 unique events. Past editions retained as closed; event-detail extraction incomplete. No access controls bypassed.'
             if identity=='eth-agentic-systems':data['coverage']='Four officially published application tracks; academic routes, not confirmed individual openings. Linked Notion instructions incomplete.'
             old=c.execute('SELECT data FROM sources WHERE id=?',(identity,)).fetchone()
@@ -275,7 +305,7 @@ def upgrade():
                     data={**existing,**{k:data[k] for k in ['name','url','adapter','category','enabled','status','organization_id','operational','coverage']}}
                     c.execute('UPDATE sources SET next_due=NULL WHERE id=?',(identity,))
             c.execute('INSERT INTO sources(id,data) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',(identity,json.dumps(data)))
-        aliases={'a4c63ea3bfa3':('tum-cvg','Covered by TUM CVG project collector; homepage retained as source history.'),'daedalean':('destinus','Shared official Destinus board; Daedalean affiliation retained when named in the posting.')}
+        aliases={'cyber-niclas':('cyber-valley','Covered by the current Cyber Valley calendar; original source and record history preserved.'),'a4c63ea3bfa3':('tum-cvg','Covered by TUM CVG project collector; homepage retained as source history.'),'daedalean':('destinus','Shared official Destinus board; Daedalean affiliation retained when named in the posting.')}
         for identity,(target,note) in aliases.items():
             old=c.execute('SELECT data FROM sources WHERE id=?',(identity,)).fetchone();d=json.loads(old[0]) if old else {'name':'Daedalean','url':'https://daedalean.ai/careers','category':'jobs','interval_hours':24}
             d.update(adapter='alias',enabled=False,alias_of=target,status='Covered by '+target,coverage=note,operational=False);c.execute('INSERT INTO sources(id,data) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data',(identity,json.dumps(d)))
@@ -297,4 +327,4 @@ def upgrade():
             record.setdefault('publisher_identifiers',{})['breezy']=identity
             body=json.dumps(record,sort_keys=True,ensure_ascii=False)
             c.execute('UPDATE opportunities SET data=?,hash=? WHERE id=?',(body,hashlib.sha256(body.encode()).hexdigest(),row['id']))
-    db.set_meta('startup_registry','6')
+    db.set_meta('startup_registry','8')

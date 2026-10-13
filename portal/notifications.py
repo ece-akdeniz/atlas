@@ -153,3 +153,15 @@ def notification_records():
     for row in records:
         if any(e['source_id'] in failed for e in row.get('sources',[])):row['verification_warning']='Latest source check failed'
     return ranked(records,db.get_meta('profile',{}),db.now()[:10])
+
+
+def confirm_receipt(identity):
+    """Only an explicit recipient confirmation establishes inbox receipt."""
+    with db.connect() as c:
+        row=c.execute('SELECT status,payload FROM notification_events WHERE id=?',(identity,)).fetchone()
+        if not row or row['status'] not in ['accepted','delivered']:raise ValueError('Only a provider-accepted message can be confirmed received')
+        payload=json.loads(row['payload'])
+        if payload.get('destination')!=settings()['destination']:raise ValueError('This message was sent to a different destination')
+        payload.setdefault('receipt_confirmed_at',db.now());payload['receipt_evidence']='recipient_confirmation'
+        c.execute("UPDATE notification_events SET status='delivered',payload=? WHERE id=?",(json.dumps(payload),identity))
+    return {'status':'delivered','receipt_confirmed_at':payload['receipt_confirmed_at'],'evidence':'recipient_confirmation'}
