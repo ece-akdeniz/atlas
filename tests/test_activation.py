@@ -157,3 +157,39 @@ class ActivationTests(unittest.TestCase):
   with self.assertRaises(ValueError):set_owner('different@example.com','Other')
   self.assertEqual(owner()['email'],'owner@example.com')
   self.assertEqual(self.client.post('/api/register',json={},headers=self.headers).status_code,404)
+
+class HomeHostingTests(unittest.TestCase):
+ def test_home_settings_are_private_and_preserve_production_guard(self):
+  from scripts.home_host import prepare,environment,write_agents
+  with tempfile.TemporaryDirectory() as tmp:
+   path=Path(tmp)/'settings.json'
+   prepare('atlas.example.ts.net','fixture-password-long','owner@example.com',path)
+   env=environment(path)
+   self.assertEqual(env['PORTAL_ENV'],'production');self.assertEqual(env['ATLAS_ZERO_COST'],'1')
+   self.assertEqual(path.stat().st_mode&0o777,0o600)
+   self.assertNotIn('fixture-password-long',path.read_text())
+   with self.assertRaises(ValueError):prepare('atlas.example.ts.net','other-password-long','owner@example.com',path)
+   path.chmod(0o644)
+   with self.assertRaises(ValueError):environment(path)
+ def test_zero_cost_blocks_configured_provider_calls(self):
+  with patch.dict(os.environ,{'ATLAS_ZERO_COST':'1','OPENAI_API_KEY':'fixture','RESEND_API_KEY':'fixture'}),patch('requests.get') as get,patch('requests.post') as post:
+   self.assertIsNone(providers.get('OPENAI_API_KEY'));self.assertIsNone(providers.get('RESEND_API_KEY'))
+   with self.assertRaises(ValueError):providers.preflight()
+   with self.assertRaisesRegex(ValueError,'zero-cost'):writing.generate({},'letter')
+   from portal.notifications import configured
+   self.assertFalse(configured());get.assert_not_called();post.assert_not_called()
+
+ def test_launch_agents_keep_secrets_out_and_cover_all_processes(self):
+  import plistlib
+  from scripts import home_host
+  with tempfile.TemporaryDirectory() as tmp,patch.object(home_host,'ROOT',Path(tmp)):
+   config=Path(tmp)/'settings.json'
+   home_host.prepare('atlas.example.ts.net','fixture-password-long','owner@example.com',config)
+   folder=home_host.write_agents(Path(tmp)/'agents',config)
+   self.assertEqual(len(list(folder.glob('*.plist'))),3)
+   for file in folder.glob('*.plist'):
+    body=plistlib.loads(file.read_bytes())
+    self.assertTrue(body['KeepAlive']);self.assertNotIn('PORTAL_PASSWORD_HASH',str(body))
+    self.assertNotIn('owner@example.com',str(body));self.assertEqual(body['Umask'],63)
+   self.assertIn('127.0.0.1:18765',home_host.ROLES['web'])
+   with self.assertRaises(ValueError):home_host.write_agents(folder,config)

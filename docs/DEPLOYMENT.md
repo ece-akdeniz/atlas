@@ -1,3 +1,5 @@
+> **Current decision — 13 October 2026:** $0/month overrides the earlier paid-hosting acceptance. Follow [FREE-HOME-HOSTING.md](FREE-HOME-HOSTING.md) for private Tailscale home hosting. Do not buy a domain/server. Paid cloud instructions below are historical/optional, not the active plan. Home-host uptime requires the host awake; paid writing/email APIs are disabled in the new home configuration.
+
 # Deployment — canonical procedure
 
 **Superseded on 13 October 2026.** Use [STUDIO-DEPLOYMENT.md](STUDIO-DEPLOYMENT.md) for the product ledger and [PRODUCTION-RUNBOOK.md](PRODUCTION-RUNBOOK.md) for the supported launch, migration, rollback and verification procedure.

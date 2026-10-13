@@ -6,6 +6,7 @@ from portal import db,studio
 PROMPT_VERSION='studio-writing-2.1'
 RATES={'gpt-6-luna':(.10,.50),'gpt-6.1-sol':(2.,10.)}
 def generate(p,kind,template_id=None,section=None,current_draft=None):
+    if os.environ.get('ATLAS_ZERO_COST')=='1':raise ValueError('Model writing is disabled in zero-cost mode. Edit your documents manually; existing drafts are unchanged.')
     if not providers.get('OPENAI_API_KEY'):raise ValueError('Writing provider not configured; set OPENAI_API_KEY server-side')
     model=providers.get('STUDIO_MODEL','gpt-6-luna')
     if model not in RATES:raise ValueError('Model needs a verified price entry before enabling')

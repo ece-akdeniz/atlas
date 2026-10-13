@@ -1,0 +1,38 @@
+# Explicitly select with -f compose.home.yaml. No public proxy or ports.
+x-home: &home
+  build:
+    context: .
+    dockerfile: deploy/Dockerfile.home
+  env_file: ./private/production-settings/atlas.env
+  environment:
+    PORTAL_ENV: production
+    PORTAL_DB: /data/portal.sqlite3
+    ATLAS_ZERO_COST: '1'
+    ATLAS_PROVIDER_CONFIG: /data/disabled-providers.json
+    PLAYWRIGHT_BROWSERS_PATH: /opt/browser-cache
+  volumes:
+    - ${ATLAS_DATA_DIR:?Set ATLAS_DATA_DIR to a restored private data directory}:/data
+  restart: unless-stopped
+  init: true
+  read_only: true
+  tmpfs:
+    - /tmp:size=512m,mode=1777
+  security_opt: ['no-new-privileges:true']
+  cap_drop: [ALL]
+  pids_limit: 256
+  mem_limit: 2g
+  logging:
+    driver: json-file
+    options: {max-size: 10m, max-file: '3'}
+services:
+  web:
+    <<: *home
+    ports: ['127.0.0.1:18765:8000']
+  collector:
+    <<: *home
+    command: [python, -m, portal.worker]
+  documents:
+    <<: *home
+    # Start only after the sandbox probe succeeds under this exact profile.
+    profiles: [documents]
+    command: [python, -m, portal.jobs]

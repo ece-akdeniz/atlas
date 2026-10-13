@@ -13,12 +13,14 @@ def settings():
     if not isinstance(data,dict):raise ValueError('Invalid provider configuration')
     return {k:str(v) for k,v in data.items() if k in ALLOWED}
 def get(key,default=None):
+    if os.environ.get('ATLAS_ZERO_COST')=='1' and key in {'OPENAI_API_KEY','RESEND_API_KEY'}:return None
     return os.environ.get(key) or settings().get(key,default)
 def budget():
     value=float(get('STUDIO_MONTHLY_BUDGET_USD','2'))
     if not math.isfinite(value) or value<=0:raise ValueError('Writing budget must be a positive finite amount')
     return min(value,50)
 def preflight():
+    if os.environ.get('ATLAS_ZERO_COST')=='1':raise ValueError('Writing provider calls are disabled in zero-cost mode')
     import requests
     from portal.writing import RATES
     model=get('STUDIO_MODEL','gpt-6-luna');key=get('OPENAI_API_KEY')

@@ -1,3 +1,7 @@
+## Zero-subscription home hosting — 13 October 2026
+
+Inspected Flask/SQLite/private files, collector, document queue and compiler. Render Free cannot preserve the existing SQLite/uploads and does not supply free persistent workers; current official limits linked in FREE-HOME-HOSTING.md. Added private production home settings, loopback-only Gunicorn launcher and macOS launch-agent generator. Added container recipe with document sandbox probe gate; Docker and Tailscale are absent, so no build or private deployment is claimed. Zero-cost mode blocks existing model/email credentials without deleting them. Personal data, settings and active services were not changed. 91 isolated tests passed, including private settings, refusal to overwrite credentials, zero-cost network-call denial, and all three generated LaunchAgents containing no secrets. Remaining device/runtime gates are reported in the free-hosting guide.
+
 ## Owner access follow-up — 13 October 2026
 
 88 isolated tests pass after adding sole-owner authentication. Correct password with a different email is rejected; normalized owner email succeeds; a session with mismatched owner identity cannot access state, uploads, document PDF or export, and Studio redirects to sign-in. Owner setup is idempotent and replacement requires explicit migration. There is no public registration endpoint; the login page does not disclose the owner email. Production settings include the owner identity and keep password hashing/secret permissions.

@@ -1,3 +1,5 @@
+> **Current decision — 13 October 2026:** $0/month overrides the earlier paid-hosting acceptance. Follow [FREE-HOME-HOSTING.md](FREE-HOME-HOSTING.md) for private Tailscale home hosting. Do not buy a domain/server. Paid cloud instructions below are historical/optional, not the active plan. Home-host uptime requires the host awake; paid writing/email APIs are disabled in the new home configuration.
+
 # Product and deployment ledger — 2026-10-13T14:39:26+00:00
 
 Status vocabulary: **implemented** means code exists; **locally tested** means the stated local test passed; **production-tested** requires the real hosted service (none yet); **partial** identifies unfinished product or integration work; **blocked** identifies a specific external dependency. A credential does not complete unfinished code. Detailed evidence and dated historical results are in [VALIDATION.md](VALIDATION.md); all 54 registry entries are individually audited in [SOURCE-AUDIT-2026-10-13.md](SOURCE-AUDIT-2026-10-13.md).

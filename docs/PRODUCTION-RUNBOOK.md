@@ -1,3 +1,5 @@
+> **Current decision — 13 October 2026:** $0/month overrides the earlier paid-hosting acceptance. Follow [FREE-HOME-HOSTING.md](FREE-HOME-HOSTING.md) for private Tailscale home hosting. Do not buy a domain/server. Paid cloud instructions below are historical/optional, not the active plan. Home-host uptime requires the host awake; paid writing/email APIs are disabled in the new home configuration.
+
 # Atlas + Application Studio: production runbook
 
 Status: executable preparation, **not production-tested**. Owner must supply the server, domain and SSH access. The user accepted the existing hosting proposal on 13 October 2026, while requesting a cheaper `.tr` comparison. No purchase has been made; the domain name, checkout total and account/SSH access remain outstanding. This is the only supported deployment procedure; the Docker example is legacy.
