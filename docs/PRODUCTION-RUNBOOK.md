@@ -1,6 +1,6 @@
 # Atlas + Application Studio: production runbook
 
-Status: executable preparation, **not production-tested**. Owner must supply the server, domain and SSH access. No purchases are authorized or made. This is the only supported deployment procedure; the Docker example is legacy.
+Status: executable preparation, **not production-tested**. Owner must supply the server, domain and SSH access. The user accepted the existing hosting proposal on 13 October 2026, while requesting a cheaper `.tr` comparison. No purchase has been made; the domain name, checkout total and account/SSH access remain outstanding. This is the only supported deployment procedure; the Docker example is legacy.
 
 ## One concrete hosting proposal (prices checked 13 October 2026)
 
@@ -13,16 +13,24 @@ Status: executable preparation, **not production-tested**. Owner must supply the
 - Caddy, Python, SQLite, Chromium, Bubblewrap and TeX Live: **€0** software subscriptions.
 - Encrypted off-server backup: Backblaze B2 first 10 GB free, with restic encryption and a logged 5 GB warning threshold. [Pricing](https://www.backblaze.com/cloud-storage/pricing). Separate B2 account and bucket key required; stay below free storage/transaction allowances.
 
-**Recurring hosting total: €9.51/month**, excluding optional writing API usage. This is a calculated quote from public prices, not a measured bill or checkout authorization. Domain billed annually. Confirm CX23 availability; do not substitute a costlier VM without approval. No second server, managed database or external scheduler.
+**Recurring hosting total: €9.51/month**, excluding optional writing API usage. This is a calculated quote from public prices, not a measured bill; the user has accepted this hosting proposal, but no purchase has been made. Domain billed annually. Confirm CX23 availability; do not substitute a costlier VM without approval. No second server, managed database or external scheduler.
 
 Writing is separate: GPT-6 Luna standard $0.10 input/$0.50 output per million tokens, $2/month Atlas reservation cap. At 50 drafts of 8k input + 2k output each, estimated usage is $0.09/month before retries/tax; worst allowed application spend is $2 before tax/FX. Leave at least €3/month of the €15 budget for exchange-rate/tax variation. Set a matching account project budget/alert and turn off automatic credit replenishment if unwanted. [Current OpenAI model](https://developers.openai.com/api/docs/models/gpt-6-luna), [pricing](https://developers.openai.com/api/docs/pricing). Account/model access passed; real generation returned depleted-credit errors. No successful generation or provider invoice has been measured. Add credit through account Billing before retrying; the $2 Atlas cap remains enforced.
 
 Networking: incoming/internal traffic is free; outbound transfer above the selected plan allowance is billable. Hetzner sends 75%/100% alerts, not a hard spending cap. Confirm the actual German CX23 allowance/overage in checkout and do not approve paid add-ons. This small private portal should stay within allowance, but €9.51 is not an absolute traffic/storage bill ceiling. [Official billing rules](https://docs.hetzner.com/cloud/billing/faq/).
 
+## Domain alternative and private ownership — 13 October 2026
+
+The official [METUnic Turkish price list](https://metunic.com.tr/fiyat-listesi/) shows `.tr` registration **₺229/year**, renewal **₺309/year**, VAT excluded (effective 28 April 2026; rendered table checked). At the [ECB 12 October reference rate](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.ff.html) of ₺55.1635 per euro, these are approximately **€4.15 / €5.60 before VAT**. Checkout tax, exchange rate and payment fees can differ. Domain.de's €1.99 first-year promotion is cheaper initially; `.tr` renewal is cheaper before tax than `.de`'s regular €12.80 including VAT. Do not use the stale English METUnic list. A `.tr` domain does not require Turkish hosting. Availability remains unchecked until the owner chooses a name.
+
+The existing Gmail destination is registered privately as the sole Atlas owner, with a backup taken first. Production now requires owner email + password, a valid server session and matching owner identity; there is no registration route. The sign-in page and static styling are publicly reachable, but private pages, APIs, uploaded CVs and document downloads require authentication. `noindex` is an additional indexing preference, not access protection. Local loopback development remains separate and does not require sign-in. Password creation uses the hidden terminal prompt after a domain is selected; it has not been completed.
+
+Future Europe-wide multi-user access is deferred. Before inviting anyone, implement per-user ownership for profiles, workflow, uploads, Studio projects/documents and notification settings; scoped queries, migration and isolation tests; account provisioning/recovery and roles. The present shared private dataset must never be exposed by merely adding another login.
+
 ## Exact owner steps before access exists
 
-1. Create/sign in to Hetzner Cloud, enable account MFA. After approving the price, create a CX23 in Germany with Debian 13, IPv4 and backups. Add **your public SSH key** during creation. Keep private keys/passwords out of chat. The server can initially have inbound SSH restricted to your IP; ports 80/443 are opened for Caddy after app authentication is configured.
-2. Register an available ordinary `.de` domain at Domain.de at no more than the normal price above. Choose its name yourself. Set an `A` record for `atlas.<your-domain>` to the VM IPv4; only add `AAAA` if the actual IPv6 is configured. TTL 300 during setup. Do not buy a separate TLS certificate.
+1. Create/sign in to Hetzner Cloud, enable account MFA. Within the accepted proposal, create a CX23 in Germany with Debian 13, IPv4 and backups. Add **your public SSH key** during creation. Keep private keys/passwords out of chat. The server can initially have inbound SSH restricted to your IP; ports 80/443 are opened for Caddy after app authentication is configured.
+2. Choose an available domain name and confirm its checkout total: `.de` at Domain.de or the cheaper-renewal `.tr` option below. No name has been selected or registered. Set an `A` record for `atlas.<your-domain>` to the VM IPv4; only add `AAAA` if the actual IPv6 is configured. TTL 300 during setup. Do not buy a separate TLS certificate.
 3. Provide only the domain and SSH host/user or a working local SSH alias. Confirm the host fingerprint from the provider console before first login; do not disable SSH host verification.
 4. Create a Resend Free account and add your sending domain, e.g. `mail.<your-domain>`. Add exactly the DKIM/SPF/MX verification records shown by Resend to DNS; do not invent DNS values. Verify the domain, create a sending key, and enter it through the hidden terminal setup below. No Gmail password or inbox permission is needed.
 5. For off-site backups, create a private B2 bucket, configure a bucket-scoped application key, and provide it through the server's protected backup environment file. Save the restic recovery password separately in your password manager. Do not paste either secret into chat.
@@ -58,7 +66,7 @@ Prepare production authentication locally only after choosing the hostname:
 .venv/bin/python -m scripts.configure_production --domain atlas.your-domain.de
 ```
 
-The hidden prompt hashes a minimum-12-character sign-in password, generates a random session secret and creates mode-600 files inside ignored `private/production-settings/`. It refuses to overwrite an existing directory and starts no service. Transfer both files over authenticated SSH to a private staging directory on the approved host (replace `atlas-host` with the verified alias):
+The setup reuses the privately registered owner email (or asks for it on a fresh installation). The hidden prompt hashes a minimum-12-character sign-in password, generates a random session secret and creates mode-600 files inside ignored `private/production-settings/`. It refuses to overwrite an existing directory and starts no service. Transfer both files over authenticated SSH to a private staging directory on the approved host (replace `atlas-host` with the verified alias):
 
 ```sh
 ssh atlas-host 'umask 077; mkdir -p ~/atlas-settings'
@@ -72,7 +80,7 @@ sudo install -o root -g atlas -m 640 ~/atlas-settings/atlas.env /etc/atlas.env
 sudo install -o root -g caddy -m 640 ~/atlas-settings/caddy.env /etc/caddy/atlas.env
 ```
 
-The app file contains production domain/origin, hashed password, random session secret, private provider path and browser-cache path. Keep transfer copies private; never paste or commit them. Caddy receives only the domain file, not provider or application secrets.
+The app file contains production domain/origin, sole owner email, hashed password, random session secret, private provider path and browser-cache path. Keep transfer copies private; never paste or commit them. Caddy receives only the domain file, not provider or application secrets.
 
 Run the provider setup as atlas with `ATLAS_PROVIDER_CONFIG` set to that path, or keep keys in `/etc/atlas.env`. Environment settings override private JSON. The app never returns secrets in API state. Keep Caddy's separate `/etc/caddy/atlas.env` limited to `PORTAL_DOMAIN`; it must not receive application/model/email secrets.
 

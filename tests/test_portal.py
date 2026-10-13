@@ -67,11 +67,11 @@ class PortalTests(unittest.TestCase):
     def test_production_login_and_unauthenticated_api(self):
         from portal.app import create_app
         from werkzeug.security import generate_password_hash
-        with patch.dict(os.environ,{'PORTAL_ENV':'production','SECRET_KEY':'x'*40,'PORTAL_PASSWORD_HASH':generate_password_hash('long-test-password'),'PORTAL_ORIGIN':'https://atlas.example'}):
+        with patch.dict(os.environ,{'PORTAL_ENV':'production','PORTAL_OWNER_EMAIL':'owner@example.com','SECRET_KEY':'x'*40,'PORTAL_PASSWORD_HASH':generate_password_hash('long-test-password'),'PORTAL_ORIGIN':'https://atlas.example'}):
             app=create_app(test=True);c=app.test_client();self.assertEqual(c.get('/api/state').status_code,401)
             c.get('/login')
             with c.session_transaction() as sess: nonce=sess['login_nonce']
-            self.assertEqual(c.post('/login',data={'nonce':nonce,'password':'long-test-password'}).status_code,302)
+            self.assertEqual(c.post('/login',data={'nonce':nonce,'email':'owner@example.com','password':'long-test-password'}).status_code,302)
             self.assertEqual(c.get('/api/state').status_code,200)
     def test_rpg_extracts_only_available_projects(self):
         html='<h3>Drone Mapping - Available</h3><p>Project in computer vision with Python and PyTorch. Thesis Type: Master Thesis. Apply with CV.</p><h3>Old topic - Taken</h3><p>Not available.</p>'

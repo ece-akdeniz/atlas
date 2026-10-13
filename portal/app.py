@@ -4,6 +4,7 @@ from urllib.parse import urlsplit
 from flask import Flask, request, jsonify, session, render_template, redirect, Response
 from werkzeug.security import check_password_hash
 from portal import db
+from portal.access import owner
 from portal.seed import bootstrap
 from portal.model import ranked, recommendations, RANK_VERSION, DEFAULT_PROFILE, STAGES
 
@@ -15,6 +16,8 @@ def create_app(test=False):
     startup_upgrade()
     app=Flask(__name__)
     production=os.environ.get('PORTAL_ENV')=='production'
+    account=owner()
+    if production and not account:raise RuntimeError('Production requires a configured owner account')
     secret=os.environ.get('SECRET_KEY')
     if production and (not secret or len(secret)<32 or not os.environ.get('PORTAL_PASSWORD_HASH') or not os.environ.get('PORTAL_ORIGIN')): raise RuntimeError('Production requires SECRET_KEY (32+ chars), PORTAL_PASSWORD_HASH and PORTAL_ORIGIN')
     if not secret and not production:
@@ -37,11 +40,11 @@ def create_app(test=False):
         if production:
             token=session.get('token')
             with db.connect() as c: valid=c.execute('SELECT 1 FROM sessions WHERE token_hash=? AND expires>?',(hashlib.sha256((token or '').encode()).hexdigest(),int(time.time()))).fetchone()
-            if not valid: return (jsonify(error='Sign in required'),401) if request.path.startswith('/api/') else redirect('/login')
+            if not valid or session.get('owner_id')!=account['id']: return (jsonify(error='Sign in required'),401) if request.path.startswith('/api/') else redirect('/login')
         if request.method not in ['GET','HEAD','OPTIONS'] and request.headers.get('X-CSRF-Token')!=session.get('csrf'): return jsonify(error='CSRF validation failed'),403
     @app.after_request
     def headers(response):
-        response.headers.update({'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"})
+        response.headers.update({'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow, noarchive','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"})
         if request.path.endswith('/pdf') and request.path.startswith('/api/studio/documents/'):
             response.headers['X-Frame-Options']='SAMEORIGIN'
             response.headers['Content-Security-Policy']=response.headers['Content-Security-Policy'].replace("frame-ancestors 'none'","frame-ancestors 'self'")
@@ -61,8 +64,11 @@ def create_app(test=False):
             c.execute('INSERT INTO login_attempts VALUES(?,?)',(ip,epoch))
         if attempts>=10: return 'Too many attempts. Try again in 15 minutes.',429
         if not secrets.compare_digest(request.form.get('nonce',''),session.get('login_nonce','invalid')): return 'Invalid sign-in request',403
-        if not check_password_hash(os.environ.get('PORTAL_PASSWORD_HASH',''),request.form.get('password','')): return render_template('login.html',nonce=session.get('login_nonce'),error='Incorrect password'),401
-        session.clear(); token=secrets.token_urlsafe(32); session['token']=token; session.permanent=True
+        password_ok=check_password_hash(os.environ.get('PORTAL_PASSWORD_HASH',''),request.form.get('password',''))
+        submitted=request.form.get('email','').strip().casefold()
+        email_ok=bool(account) and secrets.compare_digest(submitted.encode(),account['email'].encode())
+        if not password_ok or not email_ok:return render_template('login.html',nonce=session.get('login_nonce'),error='Incorrect email or password'),401
+        session.clear(); token=secrets.token_urlsafe(32); session['token']=token; session['owner_id']=account['id']; session.permanent=True
         with db.connect() as c: c.execute('INSERT INTO sessions VALUES(?,?)',(hashlib.sha256(token.encode()).hexdigest(),epoch+12*3600))
         return redirect('/')
     @app.get('/')

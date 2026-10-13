@@ -1,3 +1,9 @@
+## Owner access follow-up — 13 October 2026
+
+88 isolated tests pass after adding sole-owner authentication. Correct password with a different email is rejected; normalized owner email succeeds; a session with mismatched owner identity cannot access state, uploads, document PDF or export, and Studio redirects to sign-in. Owner setup is idempotent and replacement requires explicit migration. There is no public registration endpoint; the login page does not disclose the owner email. Production settings include the owner identity and keep password hashing/secret permissions.
+
+Actual private owner metadata was added from the existing configured email after `data/backups/before-owner-account-20261013.tar.gz`; no production password was created. The local web process was restarted and the rendered Email/Password sign-in form inspected; screenshot `/tmp/atlas-owner-signin.png`. This is local UI and isolated production-configuration evidence, **not hosted authentication evidence**. Local loopback mode remains accessible without login. Hosting acceptance recorded; domain and account access remain missing. Model credit and verified email sender dependencies are unchanged.
+
 # Current validation — 13 October 2026, 14:49 UTC
 
 Starting commit: `2b1a103`. This section supersedes the dated history below. No live hosted URL exists. Account/model access passed; real writing generation did **not** pass. No email was sent or Gmail receipt confirmed.

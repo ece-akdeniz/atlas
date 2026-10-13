@@ -75,7 +75,7 @@ class StudioTests(unittest.TestCase):
  def test_production_protects_private_routes(self):
   from werkzeug.security import generate_password_hash
   from portal.app import create_app
-  with patch.dict(os.environ,{'PORTAL_ENV':'production','PORTAL_ORIGIN':'https://atlas.example.test','SECRET_KEY':'x'*40,'PORTAL_PASSWORD_HASH':generate_password_hash('test-only-password')}):
+  with patch.dict(os.environ,{'PORTAL_ENV':'production','PORTAL_OWNER_EMAIL':'owner@example.com','PORTAL_ORIGIN':'https://atlas.example.test','SECRET_KEY':'x'*40,'PORTAL_PASSWORD_HASH':generate_password_hash('test-only-password')}):
    client=create_app(test=True).test_client()
    for route in ['/api/studio','/api/uploads/fake','/api/studio/documents/fake/pdf','/api/state','/api/notifications']:
     self.assertEqual(client.get(route).status_code,401,route)

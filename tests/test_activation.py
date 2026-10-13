@@ -108,13 +108,13 @@ class ActivationTests(unittest.TestCase):
  def test_production_setup_keeps_password_hidden_and_refuses_overwrite(self):
   from scripts.configure_production import prepare
   from werkzeug.security import check_password_hash
-  folder=prepare('atlas.example.de','long-test-password',Path(self.tmp.name)/'production')
+  folder=prepare('atlas.example.de','long-test-password',Path(self.tmp.name)/'production',owner_email='owner@example.com')
   env=dict(line.split('=',1) for line in (folder/'atlas.env').read_text().splitlines())
   self.assertEqual(env['PORTAL_ORIGIN'],'https://atlas.example.de');self.assertTrue(check_password_hash(env['PORTAL_PASSWORD_HASH'],'long-test-password'))
   self.assertNotIn('long-test-password',(folder/'atlas.env').read_text());self.assertEqual((folder/'atlas.env').stat().st_mode&0o777,0o600)
   self.assertEqual((folder/'caddy.env').read_text(),'PORTAL_DOMAIN=atlas.example.de\n')
-  with self.assertRaises(ValueError):prepare('atlas.example.de','long-test-password',folder)
-  with self.assertRaises(ValueError):prepare('evil.de\nPORTAL_ENV=development','long-test-password',Path(self.tmp.name)/'bad')
+  with self.assertRaises(ValueError):prepare('atlas.example.de','long-test-password',folder,owner_email='owner@example.com')
+  with self.assertRaises(ValueError):prepare('evil.de\nPORTAL_ENV=development','long-test-password',Path(self.tmp.name)/'bad',owner_email='owner@example.com')
 
  def test_smartrecruiters_detail_preserves_workload_and_does_not_promote_future_thesis(self):
   from portal.startups import collect
@@ -133,3 +133,27 @@ class ActivationTests(unittest.TestCase):
   r=normalize({'category':'jobs','type':'Internship','employment_type_raw':'Full-time'})
   self.assertEqual(r['types'],['Internship']);self.assertEqual(r['workload'],'Full-time; weekly hours not stated');self.assertEqual(r['employment_arrangements'],['Full-time'])
   self.assertEqual(normalize(r),r)
+
+ def test_owner_only_login_denies_other_email_and_revokes_mismatched_identity(self):
+  from portal.access import set_owner
+  from portal.app import create_app
+  from werkzeug.security import generate_password_hash
+  set_owner('owner@example.com','Owner')
+  with patch.dict(os.environ,{'PORTAL_ENV':'production','SECRET_KEY':'x'*40,'PORTAL_PASSWORD_HASH':generate_password_hash('long-test-password'),'PORTAL_ORIGIN':'https://atlas.example.test'}):
+   client=create_app(test=True).test_client()
+   response=client.get('/login');self.assertIn('name="email"',response.get_data(as_text=True));self.assertNotIn('owner@example.com',response.get_data(as_text=True));self.assertIn('noindex',response.headers['X-Robots-Tag'])
+   with client.session_transaction() as session:nonce=session['login_nonce']
+   self.assertEqual(client.post('/login',data={'nonce':nonce,'email':'other@example.com','password':'long-test-password'}).status_code,401)
+   self.assertEqual(client.post('/login',data={'nonce':nonce,'email':'OWNER@example.com','password':'long-test-password'}).status_code,302)
+   self.assertEqual(client.get('/api/studio').status_code,200)
+   with client.session_transaction() as session:session['owner_id']='wrong-owner'
+   for path in ['/api/state','/api/uploads/fake','/api/studio/documents/fake/pdf','/api/export']:
+    self.assertEqual(client.get(path).status_code,401)
+   self.assertEqual(client.get('/studio').status_code,302)
+
+ def test_owner_setup_is_idempotent_and_not_public_registration(self):
+  from portal.access import set_owner,owner
+  first=set_owner('Owner@example.com','Owner');self.assertEqual(set_owner('owner@example.com','Owner'),first)
+  with self.assertRaises(ValueError):set_owner('different@example.com','Other')
+  self.assertEqual(owner()['email'],'owner@example.com')
+  self.assertEqual(self.client.post('/api/register',json={},headers=self.headers).status_code,404)
